@@ -1,6 +1,6 @@
-// app/(tabs)/_layout.tsx
+// app/index.tsx
 import { Redirect } from "expo-router";
 
-export default function TabsLayout() {
+export default function Index() {
   return <Redirect href="/(auth)/login" />;
 }

@@ -4,7 +4,7 @@
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Platform } from "react-native";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "./useAuth";
@@ -15,13 +15,84 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
 export function usePushNotifications() {
   const { user, isClient, isBarber } = useAuth();
-  const notificationListener = useRef<Notifications.Subscription>();
-  const responseListener = useRef<Notifications.Subscription>();
+  const notificationListener = useRef<Notifications.Subscription | undefined>(
+    undefined,
+  );
+  const responseListener = useRef<Notifications.Subscription | undefined>(
+    undefined,
+  );
+  const registerForPushNotifications = useCallback(async () => {
+    if (!Device.isDevice) {
+      console.log("Push notifications requieren dispositivo físico");
+      return;
+    }
+
+    try {
+      // 1. Pedir permisos
+      const { status: existing } = await Notifications.getPermissionsAsync();
+      let finalStatus = existing;
+
+      if (existing !== "granted") {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus !== "granted") {
+        console.log("Permiso de notificaciones denegado");
+        return;
+      }
+
+      // 2. Configurar Canal Android (Obligatorio)
+      if (Platform.OS === "android") {
+        await Notifications.setNotificationChannelAsync("default", {
+          name: "BarberApp",
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: "#D4A853",
+        });
+      }
+
+      // 3. Obtener el Token con manejo de errores
+      // Si estás en Expo Go sin Firebase, esto saltará al catch
+      const projectId = process.env.EXPO_PUBLIC_PROJECT_ID;
+
+      if (!projectId) {
+        console.warn("Falta EXPO_PUBLIC_PROJECT_ID en el .env");
+        return;
+      }
+
+      const tokenData = await Notifications.getExpoPushTokenAsync({
+        projectId,
+      });
+      const pushToken = tokenData.data;
+
+      // 4. Guardar en Supabase (Solo si tenemos el token)
+      if (pushToken && user?.id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("push_token")
+          .eq("id", user.id)
+          .single();
+
+        if (profile?.push_token !== pushToken) {
+          await supabase
+            .from("profiles")
+            .update({ push_token: pushToken })
+            .eq("id", user.id);
+        }
+      }
+    } catch (error) {
+      console.error("Error en el registro de notificaciones:", error);
+      // Aquí es donde capturamos el error de Firebase para que la app NO se cierre
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -59,57 +130,5 @@ export function usePushNotifications() {
       notificationListener.current?.remove();
       responseListener.current?.remove();
     };
-  }, [user?.id, isClient, isBarber]);
-
-  async function registerForPushNotifications() {
-    if (!Device.isDevice) {
-      console.log("Push notifications requieren dispositivo físico");
-      return;
-    }
-
-    // Pedir permisos
-    const { status: existing } = await Notifications.getPermissionsAsync();
-    let finalStatus = existing;
-
-    if (existing !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-
-    if (finalStatus !== "granted") {
-      console.log("Permiso de notificaciones denegado");
-      return;
-    }
-
-    // Canal Android
-    if (Platform.OS === "android") {
-      await Notifications.setNotificationChannelAsync("default", {
-        name: "BarberApp",
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: "#D4A853",
-      });
-    }
-
-    // Obtener token de Expo Push
-    const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
-    });
-
-    const pushToken = tokenData.data;
-
-    // Guardar solo si cambió
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("push_token")
-      .eq("id", user!.id)
-      .single();
-
-    if (profile?.push_token !== pushToken) {
-      await supabase
-        .from("profiles")
-        .update({ push_token: pushToken })
-        .eq("id", user!.id);
-    }
-  }
+  }, [user?.id, isClient, isBarber, registerForPushNotifications]);
 }

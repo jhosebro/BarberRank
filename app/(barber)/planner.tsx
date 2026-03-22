@@ -10,13 +10,13 @@ import {
   Image,
   Modal,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../hooks/useAuth";
 import {
   BarberBooking,
@@ -641,19 +641,12 @@ export default function PlannerScreen() {
     useBarberBookings(selectedDate);
 
   useEffect(() => {
-    console.log(
-      "📋 bookings actualizados:",
-      bookings.map((b) => ({ id: b.id.slice(0, 8), status: b.status })),
-    );
-  }, [bookings]);
-
-  useEffect(() => {
     if (!selectedBooking) return;
     console.log("🔍 buscando en bookings:", selectedBooking.id.slice(0, 8));
     const updated = bookings.find((b) => b.id === selectedBooking.id);
     console.log("✅ encontrado:", updated?.status);
     if (updated) setSelectedBooking(updated);
-  }, [bookings]);
+  }, [bookings, selectedBooking]);
 
   const handleAction = async (status: BookingStatus) => {
     if (!selectedBooking) return;

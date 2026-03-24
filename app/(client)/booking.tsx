@@ -405,7 +405,7 @@ function StepSummary({
           <Text style={{ color: "#D4A853", fontWeight: "600" }}>pendiente</Text>{" "}
           hasta que el barbero la confirme.
         </Text>
-        {/* TODO: integrar SDK de Wompi aquí */}
+        {/* FUTURE-FEAT: integrar SDK de Wompi aquí */}
         <View style={sum.wompiPlaceholder}>
           <Text style={sum.wompiText}>Integración Wompi — próximamente</Text>
         </View>
@@ -611,22 +611,26 @@ export default function BookingScreen() {
       selectedSlot.datetime.getTime() + service.duration_min * 60000,
     );
 
-    const { error } = await supabase.from("bookings").insert({
-      client_id: user.id,
-      barber_id: barber.id,
-      service_id: service.id,
-      scheduled_at: selectedSlot.datetime.toISOString(),
-      ends_at: endsAt.toISOString(),
-      status: "pending",
-      total_price: service.price,
-      notes: note.trim() || null,
-      payment_status: "pending",
-    });
+    const { data, error } = await supabase
+      .from("bookings")
+      .insert({
+        client_id: user.id,
+        barber_id: barber.id,
+        service_id: service.id,
+        scheduled_at: selectedSlot.datetime.toISOString(),
+        ends_at: endsAt.toISOString(),
+        status: "pending",
+        total_price: service.price,
+        notes: note.trim() || null,
+        payment_status: "pending",
+      })
+      .select()
+      .single();
 
     setSubmitting(false);
 
-    if (!error) {
-      await notifyBookingChange(data[0].id, "new_booking");
+    if (!error && data) {
+      await notifyBookingChange(data.id, "new_booking");
     }
 
     if (error) {

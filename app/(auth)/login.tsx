@@ -1,5 +1,4 @@
-// app/(auth)/login.tsx
-// Pantalla de inicio de sesión
+// TODO: Mejorar interfaz de login, agregar validaciones, manejo de errores y feedback al usuario, crear un logo unico, y mostrar y ocultar contraseña
 
 import { Link, router } from "expo-router";
 import { useState } from "react";
@@ -50,7 +49,7 @@ export default function LoginScreen() {
       >
         <View style={styles.header}>
           <Text style={styles.logo}>✂️</Text>
-          <Text style={styles.title}>BarberApp</Text>
+          <Text style={styles.title}>BarberRank</Text>
           <Text style={styles.subtitle}>
             Encuentra tu barbero ideal en tu ciudad
           </Text>

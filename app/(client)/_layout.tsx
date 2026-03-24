@@ -12,6 +12,8 @@ export default function ClientLayout() {
         options={{ presentation: "modal" }}
       />
       <Stack.Screen name="my-bookings" options={{ presentation: "modal" }} />
+      <Stack.Screen name="review" options={{ presentation: "modal" }} />
+      <Stack.Screen name="review-success" options={{ presentation: "modal" }} />
     </Stack>
   );
 }

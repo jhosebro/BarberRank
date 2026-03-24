@@ -152,6 +152,25 @@ function BookingCard({
         <TouchableOpacity style={card.viewBtn} onPress={onViewBarber}>
           <Text style={card.viewBtnText}>Ver barbero →</Text>
         </TouchableOpacity>
+
+        {booking.status === "completed" && (
+          <TouchableOpacity
+            style={card.rateBtn}
+            onPress={() =>
+              router.push({
+                pathname: "/(client)/review",
+                params: {
+                  bookingId: booking.id,
+                  barberId: booking.barber?.id ?? "",
+                  barberName: booking.barber?.profile?.full_name ?? "",
+                  serviceName: booking.service?.name ?? "",
+                },
+              })
+            }
+          >
+            <Text style={card.rateBtnText}>⭐ Calificar</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -239,6 +258,16 @@ const card = StyleSheet.create({
     alignItems: "center",
   },
   viewBtnText: { fontSize: 12, color: "#aaa" },
+  rateBtn: {
+    flex: 1,
+    paddingVertical: 9,
+    borderRadius: 10,
+    backgroundColor: "#2a1a00",
+    borderWidth: 0.5,
+    borderColor: "#D4A853",
+    alignItems: "center",
+  },
+  rateBtnText: { fontSize: 12, color: "#D4A853", fontWeight: "600" },
 });
 
 // ─── Estado vacío ─────────────────────────────────────────

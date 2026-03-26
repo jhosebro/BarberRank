@@ -1,10 +1,8 @@
-//FIXME: Solucionar error database.types
 //TODO: Implementar ingreso con google
 
+import { Profile, UserRole } from "@/lib/types";
 import { Session, User } from "@supabase/supabase-js";
 import { useCallback, useEffect, useState } from "react";
-import { Alert } from "react-native";
-import { Profile, UserRole } from "../lib/database.types";
 import { supabase } from "../lib/supabase";
 
 interface AuthState {
@@ -44,10 +42,11 @@ export function useAuth() {
           .select("*")
           .eq("id", userId)
           .single();
-
+        if (error) {
+          console.log("Error fetching profile:", error);
+        }
         if (data) return data as Profile;
 
-        // Si no llegó aún, espera 500ms y reintenta
         if (i < retries - 1) await new Promise((r) => setTimeout(r, 500));
       }
       return null;
@@ -55,7 +54,6 @@ export function useAuth() {
     [],
   );
 
-  // Escucha cambios de sesión (login, logout, refresh de token)
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       const profile = session?.user
@@ -121,7 +119,6 @@ export function useAuth() {
 
       return { success: true, user: data.user };
     } catch (error: any) {
-      Alert.alert("Error al registrarse", error.message);
       return { success: false, error: error.message };
     }
   };
@@ -146,7 +143,10 @@ export function useAuth() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
     });
-    if (error) Alert.alert("Error", error.message);
+    if (error) {
+      console.log("Error logging with Google");
+    }
+
     return data;
   };
 
@@ -167,7 +167,6 @@ export function useAuth() {
       .single();
 
     if (error) {
-      Alert.alert("Error", error.message);
       return { success: false };
     }
 

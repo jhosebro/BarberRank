@@ -25,7 +25,7 @@ import * as Yup from "yup";
 import { useAuth } from "../../hooks/useAuth";
 
 export default function LoginScreen() {
-  const { signIn, loading } = useAuth();
+  const { signIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedBack] = useState<{

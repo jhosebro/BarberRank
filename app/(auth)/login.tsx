@@ -1,15 +1,16 @@
-// FIXME: Solucionar Placeholder negro
 // TODO: FeedBack Visual (No usar Alert)
 // TODO: Animaciones
+// TODO: Digitalizar Logo
+// TODO: Generar nueva paleta de colores
+// TODO: Generar componente Toast global para manejo del feedback
 
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, router } from "expo-router";
 import { Formik } from "formik";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -26,6 +27,21 @@ import { useAuth } from "../../hooks/useAuth";
 export default function LoginScreen() {
   const { signIn, loading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedback, setFeedBack] = useState<{
+    type: "error" | "success" | null;
+    message: string;
+  }>({ type: null, message: "" });
+
+  useEffect(() => {
+    if (feedback.type) {
+      const timer = setTimeout(() => {
+        setFeedBack({ type: null, message: "" });
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [feedback]);
 
   const validationSchema = Yup.object({
     email: Yup.string()
@@ -42,22 +58,33 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async (values: LoginValues) => {
+    setIsSubmitting(true);
     try {
       const res = await signIn(values);
       if (!res?.user) {
-        Alert.alert("Error", "Credenciales incorrectas");
+        setFeedBack({
+          type: "error",
+          message: "Credenciales incorrectas",
+        });
         return;
       }
+
+      setFeedBack({ type: "success", message: "Inicio de sesión exitoso" });
+
       const role = res.user.user_metadata?.role;
       if (role === "barber") router.replace("/(barber)/planner");
       else if (role === "client") router.replace("/(client)/discovery");
       else router.replace("/");
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        Alert.alert("Error", error.message);
-      } else {
-        Alert.alert("Error", "Ocurrió un problema al iniciar sesión");
-      }
+      setFeedBack({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Ocurrió un problema al iniciar sesión",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -100,6 +127,7 @@ export default function LoginScreen() {
               <Text style={styles.label}>Correo electrónico</Text>
               <TextInput
                 placeholder="tu@correo.com"
+                placeholderTextColor={"#888"}
                 onChangeText={handleChange("email")}
                 onBlur={handleBlur("email")}
                 keyboardType="email-address"
@@ -125,6 +153,7 @@ export default function LoginScreen() {
                     touched.password && errors.password && styles.inputError,
                   ]}
                   placeholder="********"
+                  placeholderTextColor={"#888"}
                   value={values.password}
                   onChangeText={handleChange("password")}
                   secureTextEntry={!showPassword}
@@ -154,10 +183,22 @@ export default function LoginScreen() {
                 <Text style={styles.errorText}>{errors.password}</Text>
               )}
 
+              {feedback.type && (
+                <View
+                  style={[
+                    styles.feedback,
+                    feedback.type === "error"
+                      ? styles.feedbackError
+                      : styles.feedbackSuccess,
+                  ]}
+                >
+                  <Text style={styles.feedbackText}>{feedback.message}</Text>
+                </View>
+              )}
               <TouchableOpacity
-                style={[styles.button, loading && styles.buttonDisabled]}
+                style={[styles.button, isSubmitting && styles.buttonDisabled]}
                 onPress={() => handleSubmit()}
-                disabled={loading || !isValid || !dirty}
+                disabled={isSubmitting || !isValid || !dirty}
                 accessible={true}
                 accessibilityLabel="Iniciar sesión"
               >
@@ -165,7 +206,7 @@ export default function LoginScreen() {
                   colors={["#D4A853", "#b8973e"]}
                   style={[styles.gradient]}
                 >
-                  {loading ? (
+                  {isSubmitting ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
                     <Text style={styles.buttonText}>Ingresar</Text>
@@ -251,5 +292,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
     borderRadius: 12,
+  },
+  feedback: {
+    padding: 12,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+
+  feedbackError: {
+    backgroundColor: "#2a1a1a",
+    borderColor: "#ef4444",
+    borderWidth: 1,
+  },
+
+  feedbackSuccess: {
+    backgroundColor: "#1a2a1a",
+    borderColor: "#22c55e",
+    borderWidth: 1,
+  },
+
+  feedbackText: {
+    color: "#fff",
+    fontSize: 13,
+    textAlign: "center",
   },
 });

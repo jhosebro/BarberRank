@@ -1,5 +1,5 @@
-// hooks/useAuth.ts
-// Hook central de autenticación: registro, login, logout y sesión activa
+//FIXME: Solucionar error database.types
+//TODO: Implementar ingreso con google
 
 import { Session, User } from "@supabase/supabase-js";
 import { useCallback, useEffect, useState } from "react";
@@ -137,7 +137,6 @@ export function useAuth() {
       if (error) throw error;
       return { success: true, user: data.user };
     } catch (error: any) {
-      Alert.alert("Error al iniciar sesión", error.message);
       return { success: false, error: error.message };
     }
   };

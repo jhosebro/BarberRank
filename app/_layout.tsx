@@ -1,10 +1,10 @@
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { Stack, router, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
 
 export default function RootLayout() {
-  //FIXME: Implementar correctamente las notificaciones push para citas y reseñas
-  //usePushNotifications();
+  usePushNotifications();
   const { session, loading, profile } = useAuth();
   const segments = useSegments();
 

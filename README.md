@@ -49,5 +49,5 @@ Join our community of developers creating universal apps.
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
 
-npx expo prebuild --clean
-To build android and ios
+npx expo prebuild --clean To build android and ios
+Siempre verificar que se esta compilando el proyecto con java 17 para evitar conflictos

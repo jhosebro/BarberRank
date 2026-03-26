@@ -1,6 +1,7 @@
 // hooks/usePushNotifications.ts
 // Registra el token del dispositivo en Supabase y maneja notificaciones entrantes
 
+import Constants from "expo-constants";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
@@ -28,7 +29,12 @@ export function usePushNotifications() {
   const responseListener = useRef<Notifications.Subscription | undefined>(
     undefined,
   );
+  const isExpoGo = Constants.executionEnvironment === "storeClient";
   const registerForPushNotifications = useCallback(async () => {
+    if (Constants.executionEnvironment === "storeClient") {
+      console.log("Push notifications no disponibles en Expo Go");
+      return null;
+    }
     if (!Device.isDevice) {
       console.log("Push notifications requieren dispositivo físico");
       return;
@@ -96,6 +102,11 @@ export function usePushNotifications() {
 
   useEffect(() => {
     if (!user?.id) return;
+
+    if (isExpoGo) {
+      console.log("Modo Expo Go: push desactivadas");
+      return;
+    }
 
     registerForPushNotifications();
 

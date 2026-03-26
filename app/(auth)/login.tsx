@@ -1,4 +1,3 @@
-// TODO: FeedBack Visual (No usar Alert)
 // TODO: Animaciones
 // TODO: Digitalizar Logo
 // TODO: Generar nueva paleta de colores

@@ -1,15 +1,17 @@
-// TODO: Animaciones
 // TODO: Digitalizar Logo
 // TODO: Generar nueva paleta de colores
 // TODO: Generar componente Toast global para manejo del feedback
+// TODO: Refactorizar para que quede simplificado todo
 
+import { useScaleAnimation } from "@/hooks/animations/useScaleAnimations";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, router } from "expo-router";
 import { Formik } from "formik";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -31,6 +33,64 @@ export default function LoginScreen() {
     type: "error" | "success" | null;
     message: string;
   }>({ type: null, message: "" });
+  const [focusedInput, setFocusedInput] = useState<"email" | "password" | null>(
+    null,
+  );
+  const emailAnim = useScaleAnimation();
+  const passwordAnim = useScaleAnimation();
+
+  //Animations
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(30)).current;
+  const feedbackAnim = useRef(new Animated.Value(0)).current;
+  const [showFeedback, setShowFeedback] = useState(false);
+
+  useEffect(() => {
+    if (feedback.type) {
+      setShowFeedback(true);
+    } else {
+      setTimeout(() => setShowFeedback(false), 300);
+    }
+  }, [feedback]);
+
+  useEffect(() => {
+    Animated.timing(feedbackAnim, {
+      toValue: feedback.type ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [feedback, feedbackAnim]);
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnim, translateY]);
+
+  const buttonScale = useRef(new Animated.Value(1)).current;
+
+  const onPressIn = () => {
+    Animated.spring(buttonScale, {
+      toValue: 0.96,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const onPressOut = () => {
+    Animated.spring(buttonScale, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
 
   useEffect(() => {
     if (feedback.type) {
@@ -103,130 +163,189 @@ export default function LoginScreen() {
         isValid,
         dirty,
       }) => (
-        <KeyboardAvoidingView
-          style={styles.container}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        <Animated.View
+          style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY }] }}
         >
-          <ScrollView
-            contentContainerStyle={styles.scroll}
-            keyboardShouldPersistTaps="handled"
+          <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
           >
-            <View style={styles.header}>
-              <Image
-                source={require("../../assets/images/logo.png")}
-                style={styles.logo}
-              />
-              <Text style={styles.title}>BarberRank</Text>
-              <Text style={styles.subtitle}>
-                Encuentra tu barbero ideal en tu ciudad
-              </Text>
-            </View>
-
-            <View style={styles.form}>
-              <Text style={styles.label}>Correo electrónico</Text>
-              <TextInput
-                placeholder="tu@correo.com"
-                placeholderTextColor={"#888"}
-                onChangeText={handleChange("email")}
-                onBlur={handleBlur("email")}
-                keyboardType="email-address"
-                value={values.email}
-                style={[
-                  styles.input,
-                  touched.email && errors.email && styles.inputError,
-                ]}
-                autoCapitalize="none"
-                accessible
-                accessibilityLabel="Correo electrónico"
-                autoComplete="email"
-                textContentType="emailAddress"
-              />
-              {touched.email && errors.email && (
-                <Text style={styles.errorText}>{errors.email}</Text>
-              )}
-              <Text style={styles.label}>Contraseña</Text>
-              <View style={styles.passwordContainer}>
-                <TextInput
-                  style={[
-                    styles.input,
-                    touched.password && errors.password && styles.inputError,
-                  ]}
-                  placeholder="********"
-                  placeholderTextColor={"#888"}
-                  value={values.password}
-                  onChangeText={handleChange("password")}
-                  secureTextEntry={!showPassword}
-                  onBlur={handleBlur("password")}
-                  autoCapitalize="none"
-                  accessible
-                  accessibilityLabel="Contraseña"
-                  autoComplete="password"
-                  textContentType="password"
+            <ScrollView
+              contentContainerStyle={styles.scroll}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View style={styles.header}>
+                <Image
+                  source={require("../../assets/images/logo.png")}
+                  style={styles.logo}
                 />
-                <TouchableOpacity
-                  style={styles.eyeIcon}
-                  onPress={() => setShowPassword(!showPassword)}
-                  accessible={true}
-                  accessibilityLabel={
-                    showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
-                  }
+                <Text style={styles.title}>BarberRank</Text>
+                <Text style={styles.subtitle}>
+                  Encuentra tu barbero ideal en tu ciudad
+                </Text>
+              </View>
+
+              <View style={styles.form}>
+                <Text style={styles.label}>Correo electrónico</Text>
+                <Animated.View
+                  style={{ transform: [{ scale: emailAnim.scale }] }}
                 >
-                  <Ionicons
-                    name={showPassword ? "eye-off" : "eye"}
-                    size={20}
-                    color="#aaa"
+                  <TextInput
+                    onFocus={() => {
+                      setFocusedInput("email");
+                      emailAnim.onFocus();
+                    }}
+                    onBlur={(e) => {
+                      handleBlur("email")(e);
+                      setFocusedInput(null);
+                      emailAnim.onBlur();
+                    }}
+                    placeholder="tu@correo.com"
+                    placeholderTextColor={"#888"}
+                    onChangeText={handleChange("email")}
+                    keyboardType="email-address"
+                    value={values.email}
+                    style={[
+                      styles.input,
+                      //touched.email && errors.email && styles.inputError
+                      focusedInput === "email" && {
+                        borderColor: "#D4A853",
+                        borderWidth: 2,
+                      },
+                    ]}
+                    autoCapitalize="none"
+                    accessible
+                    accessibilityLabel="Correo electrónico"
+                    autoComplete="email"
+                    textContentType="emailAddress"
                   />
-                </TouchableOpacity>
-              </View>
-              {touched.password && errors.password && (
-                <Text style={styles.errorText}>{errors.password}</Text>
-              )}
+                </Animated.View>
 
-              {feedback.type && (
-                <View
-                  style={[
-                    styles.feedback,
-                    feedback.type === "error"
-                      ? styles.feedbackError
-                      : styles.feedbackSuccess,
-                  ]}
-                >
-                  <Text style={styles.feedbackText}>{feedback.message}</Text>
-                </View>
-              )}
-              <TouchableOpacity
-                style={[styles.button, isSubmitting && styles.buttonDisabled]}
-                onPress={() => handleSubmit()}
-                disabled={isSubmitting || !isValid || !dirty}
-                accessible={true}
-                accessibilityLabel="Iniciar sesión"
-              >
-                <LinearGradient
-                  colors={["#D4A853", "#b8973e"]}
-                  style={[styles.gradient]}
-                >
-                  {isSubmitting ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.buttonText}>Ingresar</Text>
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
-
-              <View style={styles.footer}>
-                <Text style={styles.footerText}>¿No tienes cuenta? </Text>
-                <Link href="/(auth)/register" asChild>
-                  <TouchableOpacity
-                    accessible={true}
-                    accessibilityLabel="Ir a registro de usuario"
+                {touched.email && errors.email && (
+                  <Text style={styles.errorText}>{errors.email}</Text>
+                )}
+                <Text style={styles.label}>Contraseña</Text>
+                <View style={styles.passwordContainer}>
+                  <Animated.View
+                    style={{ transform: [{ scale: passwordAnim.scale }] }}
                   >
-                    <Text style={styles.link}>Regístrate</Text>
+                    <TextInput
+                      onFocus={() => {
+                        setFocusedInput("password");
+                        passwordAnim.onFocus();
+                      }}
+                      onBlur={(e) => {
+                        handleBlur("password")(e);
+                        setFocusedInput(null);
+                        passwordAnim.onBlur();
+                      }}
+                      style={[
+                        styles.input,
+                        //touched.password && errors.password && styles.inputError,
+                        focusedInput === "password" && {
+                          borderColor: "#D4A853",
+                          borderWidth: 2,
+                        },
+                      ]}
+                      placeholder="********"
+                      placeholderTextColor={"#888"}
+                      value={values.password}
+                      onChangeText={handleChange("password")}
+                      secureTextEntry={!showPassword}
+                      autoCapitalize="none"
+                      accessible
+                      accessibilityLabel="Contraseña"
+                      autoComplete="password"
+                      textContentType="password"
+                    />
+                  </Animated.View>
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
+                    onPress={() => setShowPassword(!showPassword)}
+                    accessible={true}
+                    accessibilityLabel={
+                      showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                    }
+                  >
+                    <Ionicons
+                      name={showPassword ? "eye-off" : "eye"}
+                      size={20}
+                      color="#aaa"
+                    />
                   </TouchableOpacity>
-                </Link>
+                </View>
+                {touched.password && errors.password && (
+                  <Text style={styles.errorText}>{errors.password}</Text>
+                )}
+                <Animated.View
+                  style={{
+                    opacity: feedbackAnim,
+                    transform: [
+                      {
+                        translateY: feedbackAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-10, 0],
+                        }),
+                      },
+                    ],
+                  }}
+                >
+                  {showFeedback && (
+                    <View
+                      style={[
+                        styles.feedback,
+                        feedback.type === "error"
+                          ? styles.feedbackError
+                          : styles.feedbackSuccess,
+                      ]}
+                    >
+                      <Text style={styles.feedbackText}>
+                        {feedback.message}
+                      </Text>
+                    </View>
+                  )}
+                </Animated.View>
+
+                <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+                  <TouchableOpacity
+                    onPressIn={onPressIn}
+                    onPressOut={onPressOut}
+                    style={[
+                      styles.button,
+                      isSubmitting && styles.buttonDisabled,
+                    ]}
+                    onPress={() => handleSubmit()}
+                    disabled={isSubmitting || !isValid || !dirty}
+                    accessible={true}
+                    accessibilityLabel="Iniciar sesión"
+                  >
+                    <LinearGradient
+                      colors={["#D4A853", "#b8973e"]}
+                      style={[styles.gradient]}
+                    >
+                      {isSubmitting ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <Text style={styles.buttonText}>Ingresar</Text>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </Animated.View>
+                <View style={styles.footer}>
+                  <Text style={styles.footerText}>¿No tienes cuenta? </Text>
+                  <Link href="/(auth)/register" asChild>
+                    <TouchableOpacity
+                      accessible={true}
+                      accessibilityLabel="Ir a registro de usuario"
+                    >
+                      <Text style={styles.link}>Regístrate</Text>
+                    </TouchableOpacity>
+                  </Link>
+                </View>
               </View>
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </Animated.View>
       )}
     </Formik>
   );

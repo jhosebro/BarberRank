@@ -1,6 +1,13 @@
-// app/(auth)/register.tsx
-// Pantalla de registro — elige si eres cliente o barbero
+//TODO: Aplicar SRP
+//TODO: Extraer la validacion
+//TODO: Separar componentes de UI
+//TODO: Memorizar funciones evitando renders
+//TODO: Evitar logica en jsx
+//TODO: Mejorar UX
+//TODO: Mejorar Arquitectura
 
+import { UserRole } from "@/lib/types";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
@@ -15,22 +22,38 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
-import { UserRole } from "../../lib/database.types";
 
 export default function RegisterScreen() {
   const { signUp, loading } = useAuth();
 
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState<UserRole>("client");
+  interface RegisterForm {
+    fullName: string;
+    email: string;
+    phone: string;
+    password: string;
+    role: UserRole;
+  }
+
+  const [form, setForm] = useState<RegisterForm>({
+    fullName: "",
+    email: "",
+    phone: "",
+    password: "",
+    role: "client",
+  });
+
+  const handleChange = (field: keyof typeof form, value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
   const handleRegister = async () => {
-    if (!fullName || !email || !password || !phone) {
+    if (!form.fullName || !form.email || !form.password || !form.phone) {
       return;
     }
-    await signUp({ email, password, fullName, phone, role });
+    await signUp(form);
   };
 
   return (
@@ -50,15 +73,15 @@ export default function RegisterScreen() {
           <TouchableOpacity
             style={[
               styles.roleCard,
-              role === "client" && styles.roleCardActive,
+              form.role === "client" && styles.roleCardActive,
             ]}
-            onPress={() => setRole("client")}
+            onPress={() => handleChange("role", "client")}
           >
             <Text style={styles.roleEmoji}>💈</Text>
             <Text
               style={[
                 styles.roleLabel,
-                role === "client" && styles.roleLabelActive,
+                form.role === "client" && styles.roleLabelActive,
               ]}
             >
               Soy cliente
@@ -69,15 +92,15 @@ export default function RegisterScreen() {
           <TouchableOpacity
             style={[
               styles.roleCard,
-              role === "barber" && styles.roleCardActive,
+              form.role === "barber" && styles.roleCardActive,
             ]}
-            onPress={() => setRole("barber")}
+            onPress={() => handleChange("role", "barber")}
           >
             <Text style={styles.roleEmoji}>✂️</Text>
             <Text
               style={[
                 styles.roleLabel,
-                role === "barber" && styles.roleLabelActive,
+                form.role === "barber" && styles.roleLabelActive,
               ]}
             >
               Soy barbero
@@ -93,8 +116,8 @@ export default function RegisterScreen() {
             style={styles.input}
             placeholder="Carlos Rodríguez"
             placeholderTextColor="#999"
-            value={fullName}
-            onChangeText={setFullName}
+            value={form.fullName}
+            onChangeText={(text) => handleChange("fullName", text)}
             autoCapitalize="words"
           />
 
@@ -103,8 +126,8 @@ export default function RegisterScreen() {
             style={styles.input}
             placeholder="+57 300 000 0000"
             placeholderTextColor="#999"
-            value={phone}
-            onChangeText={setPhone}
+            value={form.phone}
+            onChangeText={(text) => handleChange("phone", text)}
             keyboardType="phone-pad"
           />
 
@@ -113,8 +136,8 @@ export default function RegisterScreen() {
             style={styles.input}
             placeholder="tu@correo.com"
             placeholderTextColor="#999"
-            value={email}
-            onChangeText={setEmail}
+            value={form.email}
+            onChangeText={(text) => handleChange("email", text)}
             autoCapitalize="none"
             keyboardType="email-address"
           />
@@ -124,8 +147,8 @@ export default function RegisterScreen() {
             style={styles.input}
             placeholder="Mínimo 8 caracteres"
             placeholderTextColor="#999"
-            value={password}
-            onChangeText={setPassword}
+            value={form.password}
+            onChangeText={(text) => handleChange("password", text)}
             secureTextEntry
           />
 
@@ -138,7 +161,9 @@ export default function RegisterScreen() {
               <ActivityIndicator color="#1a0f00" />
             ) : (
               <Text style={styles.buttonText}>
-                {role === "barber" ? "Crear cuenta de barbero" : "Crear cuenta"}
+                {form.role === "barber"
+                  ? "Crear cuenta de barbero"
+                  : "Crear cuenta"}
               </Text>
             )}
           </TouchableOpacity>
@@ -147,7 +172,8 @@ export default function RegisterScreen() {
             onPress={() => router.back()}
             style={styles.backLink}
           >
-            <Text style={styles.backText}>← Ya tengo cuenta</Text>
+            <Ionicons name="arrow-back" size={20} color="#888" />
+            <Text style={styles.backText}>Ya tengo cuenta</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -202,6 +228,12 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: "#1a0f00", fontSize: 16, fontWeight: "600" },
-  backLink: { alignItems: "center", marginTop: 16 },
+  backLink: {
+    alignItems: "center",
+    marginTop: 16,
+    flexDirection: "row",
+    gap: 6,
+    justifyContent: "center",
+  },
   backText: { color: "#888", fontSize: 14 },
 });

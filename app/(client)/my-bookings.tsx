@@ -1,8 +1,6 @@
-// app/(client)/my-bookings.tsx
-// Pantalla "mis citas" — próximas y historial con opción de cancelar
-
+import { useReviews } from "@/hooks/useReviews";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -20,7 +18,6 @@ import {
   useMyBookings,
 } from "../../hooks/useMyBookings";
 
-// ─── Helpers ──────────────────────────────────────────────
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("es-CO", {
     weekday: "short",
@@ -40,7 +37,6 @@ function fmtPrice(p: number) {
   return `$${p.toLocaleString("es-CO")}`;
 }
 
-// ─── Config de estados ────────────────────────────────────
 const STATUS_CFG = {
   pending: { label: "Pendiente", bg: "#2a2010", color: "#D4A853" },
   confirmed: { label: "Confirmada", bg: "#0d2a1a", color: "#4caf7d" },
@@ -66,15 +62,19 @@ const pill = StyleSheet.create({
 function BookingCard({
   booking,
   canCancel,
+  canRate,
   onCancel,
   onRebook,
   onViewBarber,
+  onRate,
 }: {
   booking: MyBooking;
   canCancel: boolean;
+  canRate: boolean;
   onCancel: () => void;
   onRebook: () => void;
   onViewBarber: () => void;
+  onRate: () => void;
 }) {
   const barberName = booking.barber?.profile?.full_name ?? "Barbero";
   const initials = barberName
@@ -313,6 +313,26 @@ const empty = StyleSheet.create({
 export default function MyBookingsScreen() {
   const [activeTab, setActiveTab] = useState<BookingTab>("upcoming");
   const { upcoming, history, loading, cancelBooking } = useMyBookings();
+  const { canReview } = useReviews();
+
+  const [reviewsIds, setReviewsIds] = useState<
+    Record<string, boolean | "checking">
+  >({});
+
+  useEffect(() => {
+    const completedBookings = history.filter((b) => b.status === "completed");
+    if (!completedBookings.length) return;
+
+    completedBookings.forEach(async (b) => {
+      if (b.id in reviewsIds) return;
+
+      setReviewsIds((s) => ({ ...s, [b.id]: "checking" }));
+
+      const already = !(await canReview(b.id));
+      setReviewsIds((s) => ({ ...s, [b.id]: already }));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [history]);
 
   const handleCancel = (booking: MyBooking) => {
     Alert.alert(
@@ -345,6 +365,18 @@ export default function MyBookingsScreen() {
     router.push({
       pathname: "/(client)/barber-profile",
       params: { id: booking.barber.id },
+    });
+  };
+
+  const handleRate = (booking: MyBooking) => {
+    router.push({
+      pathname: "/(client)/review",
+      params: {
+        bookingId: booking.id,
+        barberId: booking.barber?.id ?? "",
+        barberName: booking.barber?.profile?.full_name ?? "",
+        serviceName: booking.service?.name ?? "",
+      },
     });
   };
 
@@ -401,9 +433,14 @@ export default function MyBookingsScreen() {
                 activeTab === "upcoming" &&
                 (booking.status === "pending" || booking.status === "confirmed")
               }
+              canRate={
+                booking.status === "completed" &&
+                reviewsIds[booking.id] === false
+              }
               onCancel={() => handleCancel(booking)}
               onRebook={() => handleRebook(booking)}
               onViewBarber={() => handleViewBarber(booking)}
+              onRate={() => handleRate(booking)}
             />
           ))}
           <View style={{ height: 32 }} />

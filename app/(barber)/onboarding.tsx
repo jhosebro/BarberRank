@@ -1,12 +1,19 @@
-// app/(barber)/onboarding.tsx
-// Onboarding del barbero — 3 pasos: info básica, foto, horarios semanales
+//TODO: Separacion de responsabilidades
+//TODO: Manejo de estado
+//TODO: Validaciones
+//TODO: UX/UI
+//TODO: Manejo de imagenes
+//TODO: Performance
+//TODO: Seguridad y consistencia de datos
+//TODO: Navegacion y control de flujo
+//TODO: Accesibilidad
+//TODO: Clean Code
 
-import * as ImagePicker from "expo-image-picker";
-import { router } from "expo-router";
-import { useState } from "react";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { WeekSchedule } from "@/types/onboarding.types";
 import {
   ActivityIndicator,
-  Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Switch,
@@ -16,17 +23,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from "../../hooks/useAuth";
-import { supabase } from "../../lib/supabase";
-
-// ─── Tipos ────────────────────────────────────────────────
-interface DaySchedule {
-  enabled: boolean;
-  start: string;
-  end: string;
-}
-
-type WeekSchedule = Record<number, DaySchedule>;
 
 const DAY_NAMES = [
   "Domingo",
@@ -37,16 +33,6 @@ const DAY_NAMES = [
   "Viernes",
   "Sábado",
 ];
-
-const DEFAULT_SCHEDULE: WeekSchedule = {
-  0: { enabled: false, start: "09:00", end: "18:00" },
-  1: { enabled: true, start: "09:00", end: "18:00" },
-  2: { enabled: true, start: "09:00", end: "18:00" },
-  3: { enabled: true, start: "09:00", end: "18:00" },
-  4: { enabled: true, start: "09:00", end: "18:00" },
-  5: { enabled: true, start: "09:00", end: "18:00" },
-  6: { enabled: true, start: "09:00", end: "14:00" },
-};
 
 // ─── Indicador de pasos ───────────────────────────────────
 function Steps({ current }: { current: number }) {
@@ -71,37 +57,7 @@ function Steps({ current }: { current: number }) {
     </View>
   );
 }
-const si = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 20,
-  },
-  item: { flexDirection: "row", alignItems: "center" },
-  dot: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: "#333",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  dotActive: { borderColor: "#D4A853", backgroundColor: "#D4A853" },
-  dotDone: { backgroundColor: "transparent", borderColor: "#D4A853" },
-  dotText: { fontSize: 13, color: "#555", fontWeight: "600" },
-  dotTextActive: { color: "#1a0f00" },
-  line: {
-    width: 40,
-    height: 1.5,
-    backgroundColor: "#2a2a2a",
-    marginHorizontal: 6,
-  },
-  lineActive: { backgroundColor: "#D4A853" },
-});
 
-// ─── Paso 1: Info básica ──────────────────────────────────
 function StepInfo({
   city,
   setCity,
@@ -161,15 +117,16 @@ function StepInfo({
   );
 }
 
-// ─── Paso 2: Foto de perfil ───────────────────────────────
 function StepPhoto({
   avatarUri,
   onPickPhoto,
   uploading,
+  onSkip,
 }: {
   avatarUri: string | null;
   onPickPhoto: () => void;
   uploading: boolean;
+  onSkip: () => void;
 }) {
   return (
     <View style={[styles.stepWrap, { alignItems: "center" }]}>
@@ -190,7 +147,10 @@ function StepPhoto({
               overflow: "hidden",
             }}
           >
-            {/* En RN real usarías <Image source={{ uri: avatarUri }} /> */}
+            <Image
+              source={{ uri: avatarUri }}
+              style={{ width: "100%", height: "100%" }}
+            />
             <View style={[photo.circle, photo.circlePreview]}>
               <Text style={photo.previewText}>✓ Foto seleccionada</Text>
             </View>
@@ -212,41 +172,13 @@ function StepPhoto({
         Formatos: JPG, PNG. Máximo 5MB.
       </Text>
 
-      <TouchableOpacity onPress={() => {}} style={photo.skipBtn}>
+      <TouchableOpacity onPress={onSkip} style={photo.skipBtn}>
         <Text style={photo.skipText}>Saltar por ahora →</Text>
       </TouchableOpacity>
     </View>
   );
 }
-const photo = StyleSheet.create({
-  circle: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    borderWidth: 2,
-    borderColor: "#D4A853",
-    borderStyle: "dashed",
-    alignItems: "center",
-    justifyContent: "center",
-    marginVertical: 24,
-  },
-  circlePreview: { backgroundColor: "#1a2010", borderStyle: "solid" },
-  previewText: { color: "#4caf7d", fontWeight: "600", fontSize: 14 },
-  placeholder: { alignItems: "center", gap: 8 },
-  placeholderIcon: { fontSize: 36 },
-  placeholderText: { fontSize: 13, color: "#888" },
-  hint: {
-    fontSize: 12,
-    color: "#666",
-    textAlign: "center",
-    lineHeight: 18,
-    marginTop: 8,
-  },
-  skipBtn: { marginTop: 20 },
-  skipText: { color: "#666", fontSize: 13 },
-});
 
-// ─── Paso 3: Horarios ─────────────────────────────────────
 function StepSchedule({
   schedule,
   onToggleDay,
@@ -315,191 +247,37 @@ function StepSchedule({
     </View>
   );
 }
-const sched = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#1e1e1e",
-  },
-  left: { flexDirection: "row", alignItems: "center", gap: 10, width: 130 },
-  dayName: { fontSize: 14, color: "#fff", fontWeight: "500" },
-  dayNameOff: { color: "#555" },
-  times: { flexDirection: "row", alignItems: "center", gap: 6 },
-  timeInput: {
-    backgroundColor: "#1e1e1e",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    fontSize: 13,
-    color: "#fff",
-    width: 64,
-    textAlign: "center",
-    borderWidth: 0.5,
-    borderColor: "#2a2a2a",
-  },
-  separator: { fontSize: 12, color: "#666" },
-  closedText: { fontSize: 13, color: "#444" },
-  hint: {
-    backgroundColor: "#1a1a10",
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 16,
-    borderWidth: 0.5,
-    borderColor: "#3a3010",
-  },
-  hintText: { fontSize: 12, color: "#886633", lineHeight: 18 },
-});
 
-// ─── Pantalla principal ───────────────────────────────────
 export default function OnboardingScreen() {
-  const { user, updateProfile } = useAuth();
-
-  const [step, setStep] = useState(1);
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
-
-  // Paso 1
-  const [city, setCity] = useState<string>("");
-  const [address, setAddress] = useState<string>("");
-  const [bio, setBio] = useState<string>("");
-
-  // Paso 2
-  const [avatarUri, setAvatarUri] = useState<string | null>(null);
-
-  // Paso 3
-  const [schedule, setSchedule] = useState<WeekSchedule>(DEFAULT_SCHEDULE);
-
-  const toggleDay = (day: number, enabled: boolean) => {
-    setSchedule((s) => ({ ...s, [day]: { ...s[day], enabled } }));
-  };
-  const changeTime = (day: number, field: "start" | "end", value: string) => {
-    setSchedule((s) => ({ ...s, [day]: { ...s[day], [field]: value } }));
-  };
-
-  // ── Selección de foto ──
-  const pickPhoto = async () => {
-    console.log("Supabase URL:", process.env.EXPO_PUBLIC_SUPABASE_URL);
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permiso necesario",
-        "Necesitamos acceso a tu galería para subir una foto.",
-      );
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: "images",
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
-    if (!result.canceled && result.assets[0]) {
-      setUploading(true);
-      try {
-        const uri = result.assets[0].uri;
-        const fileExt = uri.split(".").pop() ?? "jpg";
-        const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
-
-        // Sube la imagen a Supabase Storage (bucket: avatars)
-        const formData = new FormData();
-        formData.append("file", {
-          uri,
-          name: fileName,
-          type: `image/${fileExt}`,
-        } as any);
-
-        const { error } = await supabase.storage
-          .from("avatars")
-          .upload(fileName, formData, { contentType: `image/${fileExt}` });
-
-        if (error) throw error;
-
-        const { data: urlData } = supabase.storage
-          .from("avatars")
-          .getPublicUrl(fileName);
-
-        // Guardar URL en el perfil
-        await updateProfile({ avatar_url: urlData.publicUrl });
-        setAvatarUri(urlData.publicUrl);
-      } catch (err: any) {
-        Alert.alert("Error", "No se pudo subir la foto: " + err.message);
-      }
-      setUploading(false);
-    }
-  };
-
-  // ── Guardar y finalizar ──
-  const handleFinish = async () => {
-    if (!user?.id) return;
-    setSaving(true);
-
-    try {
-      // Actualizar el barbero
-      const { error: barberErr } = await supabase
-        .from("barbers")
-        .update({
-          city: city,
-          address: address || null,
-          bio: bio || null,
-        })
-        .eq("profile_id", user.id);
-
-      if (barberErr) throw barberErr;
-
-      // 2. Insertar disponibilidad (borrar las anteriores primero)
-      const { data: barberRow } = await supabase
-        .from("barbers")
-        .select("id")
-        .eq("profile_id", user.id)
-        .single();
-
-      if (!barberRow) throw new Error("No se encontró el barbero");
-
-      await supabase
-        .from("availability")
-        .delete()
-        .eq("barber_id", barberRow.id);
-
-      const slotsToInsert = Object.entries(schedule)
-        .filter(([, slot]) => slot.enabled)
-        .map(([dayStr, slot]) => ({
-          barber_id: barberRow.id,
-          day_of_week: parseInt(dayStr),
-          start_time: slot.start,
-          end_time: slot.end,
-          is_active: true,
-        }));
-
-      if (slotsToInsert.length > 0) {
-        const { error: availErr } = await supabase
-          .from("availability")
-          .insert(slotsToInsert);
-        if (availErr) throw availErr;
-      }
-
-      // 3. Navegar al planner
-      router.replace("/(barber)/planner");
-    } catch (err: any) {
-      Alert.alert("Error", err.message ?? "No se pudo guardar la información.");
-    }
-    setSaving(false);
-  };
-
+  const {
+    step,
+    saving,
+    uploading,
+    city,
+    address,
+    bio,
+    avatarUri,
+    schedule,
+    setCity,
+    setAddress,
+    setBio,
+    pickPhoto,
+    toggleDay,
+    changeTime,
+    nextStep,
+    prevStep,
+    finish,
+  } = useOnboarding();
   const canContinue =
-    (step === 1 && city.trim().length > 0) || step === 2 || step === 3;
+    (step === 1 && city.trim().length > 0) ||
+    step === 2 ||
+    (step === 3 && Object.values(schedule).some((s) => s.enabled));
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Header */}
       <View style={styles.header}>
         {step > 1 ? (
-          <TouchableOpacity
-            onPress={() => setStep((s) => (s - 1) as 1 | 2 | 3)}
-            style={styles.backBtn}
-          >
+          <TouchableOpacity onPress={prevStep} style={styles.backBtn}>
             <Text style={styles.backText}>←</Text>
           </TouchableOpacity>
         ) : (
@@ -531,6 +309,7 @@ export default function OnboardingScreen() {
             avatarUri={avatarUri}
             onPickPhoto={pickPhoto}
             uploading={uploading}
+            onSkip={nextStep}
           />
         )}
         {step === 3 && (
@@ -543,7 +322,6 @@ export default function OnboardingScreen() {
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* CTA */}
       <View style={styles.ctaBar}>
         <TouchableOpacity
           style={[
@@ -551,8 +329,8 @@ export default function OnboardingScreen() {
             (!canContinue || saving) && styles.ctaBtnDisabled,
           ]}
           onPress={() => {
-            if (step < 3) setStep((s) => (s + 1) as 1 | 2 | 3);
-            else handleFinish();
+            if (step < 3) nextStep();
+            else finish();
           }}
           disabled={!canContinue || saving}
         >
@@ -569,7 +347,6 @@ export default function OnboardingScreen() {
   );
 }
 
-// ─── Estilos base ─────────────────────────────────────────
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#0f0f0f" },
   header: {
@@ -630,4 +407,100 @@ const styles = StyleSheet.create({
   },
   ctaBtnDisabled: { opacity: 0.35 },
   ctaBtnText: { color: "#1a0f00", fontSize: 16, fontWeight: "700" },
+});
+
+const si = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 20,
+  },
+  item: { flexDirection: "row", alignItems: "center" },
+  dot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "#333",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dotActive: { borderColor: "#D4A853", backgroundColor: "#D4A853" },
+  dotDone: { backgroundColor: "transparent", borderColor: "#D4A853" },
+  dotText: { fontSize: 13, color: "#555", fontWeight: "600" },
+  dotTextActive: { color: "#1a0f00" },
+  line: {
+    width: 40,
+    height: 1.5,
+    backgroundColor: "#2a2a2a",
+    marginHorizontal: 6,
+  },
+  lineActive: { backgroundColor: "#D4A853" },
+});
+
+const sched = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#1e1e1e",
+  },
+  left: { flexDirection: "row", alignItems: "center", gap: 10, width: 130 },
+  dayName: { fontSize: 14, color: "#fff", fontWeight: "500" },
+  dayNameOff: { color: "#555" },
+  times: { flexDirection: "row", alignItems: "center", gap: 6 },
+  timeInput: {
+    backgroundColor: "#1e1e1e",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    fontSize: 13,
+    color: "#fff",
+    width: 64,
+    textAlign: "center",
+    borderWidth: 0.5,
+    borderColor: "#2a2a2a",
+  },
+  separator: { fontSize: 12, color: "#666" },
+  closedText: { fontSize: 13, color: "#444" },
+  hint: {
+    backgroundColor: "#1a1a10",
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 16,
+    borderWidth: 0.5,
+    borderColor: "#3a3010",
+  },
+  hintText: { fontSize: 12, color: "#886633", lineHeight: 18 },
+});
+
+const photo = StyleSheet.create({
+  circle: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    borderWidth: 2,
+    borderColor: "#D4A853",
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 24,
+  },
+  circlePreview: { backgroundColor: "#1a2010", borderStyle: "solid" },
+  previewText: { color: "#4caf7d", fontWeight: "600", fontSize: 14 },
+  placeholder: { alignItems: "center", gap: 8 },
+  placeholderIcon: { fontSize: 36 },
+  placeholderText: { fontSize: 13, color: "#888" },
+  hint: {
+    fontSize: 12,
+    color: "#666",
+    textAlign: "center",
+    lineHeight: 18,
+    marginTop: 8,
+  },
+  skipBtn: { marginTop: 20 },
+  skipText: { color: "#666", fontSize: 13 },
 });

@@ -1,17 +1,18 @@
 import { useReviews } from "@/hooks/useReviews";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Image,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   BookingTab,
   MyBooking,
@@ -150,7 +151,9 @@ function BookingCard({
           </TouchableOpacity>
         )}
         <TouchableOpacity style={card.viewBtn} onPress={onViewBarber}>
-          <Text style={card.viewBtnText}>Ver barbero →</Text>
+          <Text style={card.viewBtnText}>
+            Ver barbero <Ionicons name="arrow-forward" />
+          </Text>
         </TouchableOpacity>
 
         {booking.status === "completed" && (
@@ -242,14 +245,19 @@ const card = StyleSheet.create({
   cancelBtnText: { fontSize: 12, color: "#e06060", fontWeight: "600" },
   rebookBtn: {
     flex: 1,
-    paddingVertical: 9,
+    padding: 5,
     borderRadius: 10,
     backgroundColor: "#2a1a00",
     borderWidth: 0.5,
     borderColor: "#D4A853",
     alignItems: "center",
   },
-  rebookBtnText: { fontSize: 12, color: "#D4A853", fontWeight: "600" },
+  rebookBtnText: {
+    fontSize: 12,
+    color: "#D4A853",
+    fontWeight: "600",
+    textAlign: "center",
+  },
   viewBtn: {
     paddingHorizontal: 12,
     paddingVertical: 9,
@@ -294,20 +302,6 @@ function EmptyState({ tab }: { tab: BookingTab }) {
     </View>
   );
 }
-const empty = StyleSheet.create({
-  wrap: { alignItems: "center", paddingTop: 60, paddingHorizontal: 32 },
-  icon: { fontSize: 48, marginBottom: 16 },
-  title: { fontSize: 18, fontWeight: "600", color: "#fff", marginBottom: 8 },
-  desc: { fontSize: 14, color: "#666", textAlign: "center", lineHeight: 20 },
-  btn: {
-    marginTop: 20,
-    backgroundColor: "#D4A853",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  btnText: { color: "#1a0f00", fontWeight: "600", fontSize: 14 },
-});
 
 // ─── Pantalla principal ───────────────────────────────────
 export default function MyBookingsScreen() {
@@ -387,7 +381,9 @@ export default function MyBookingsScreen() {
       {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
+          <Text style={styles.backText}>
+            <Ionicons name="arrow-back" style={styles.title} />
+          </Text>
         </TouchableOpacity>
         <Text style={styles.title}>Mis citas</Text>
         <View style={{ width: 36 }} />
@@ -486,4 +482,19 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 13, color: "#888", fontWeight: "500" },
   tabTextActive: { color: "#1a0f00", fontWeight: "700" },
   list: { paddingHorizontal: 16, paddingTop: 4 },
+});
+
+const empty = StyleSheet.create({
+  wrap: { alignItems: "center", paddingTop: 60, paddingHorizontal: 32 },
+  icon: { fontSize: 48, marginBottom: 16 },
+  title: { fontSize: 18, fontWeight: "600", color: "#fff", marginBottom: 8 },
+  desc: { fontSize: 14, color: "#666", textAlign: "center", lineHeight: 20 },
+  btn: {
+    marginTop: 20,
+    backgroundColor: "#D4A853",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  btnText: { color: "#1a0f00", fontWeight: "600", fontSize: 14 },
 });

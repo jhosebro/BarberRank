@@ -694,16 +694,23 @@ export default function PlannerScreen() {
             )}
           </Text>
         </View>
+
+        <TouchableOpacity onPress={signOut} style={styles.logoutBtn}>
+          <Text style={styles.logoutText}>Salir</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.header2}>
         <TouchableOpacity
           style={styles.logoutBtn}
           onPress={() => router.push("/(barber)/onboarding")}
         >
-          <Text style={{ color: "#D4A853", fontSize: 13 }}>
-            Configurar perfil
-          </Text>
+          <Text style={{ color: "#D4A853", fontSize: 13 }}>Perfil</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={signOut} style={styles.logoutBtn}>
-          <Text style={styles.logoutText}>Salir</Text>
+        <TouchableOpacity
+          onPress={() => router.push("/(barber)/services")}
+          style={{ padding: 8 }}
+        >
+          <Text style={{ color: "#D4A853", fontSize: 13 }}>Servicios</Text>
         </TouchableOpacity>
       </View>
 
@@ -804,7 +811,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
     paddingHorizontal: 20,
-    paddingTop: 40,
+    paddingTop: 20,
+    paddingBottom: 4,
+  },
+  header2: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    paddingHorizontal: 10,
     paddingBottom: 4,
   },
   headerTitle: { fontSize: 24, fontWeight: "700", color: "#fff" },

@@ -5,6 +5,7 @@ export default function BarberLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="planner" />
       <Stack.Screen name="onboarding" />
+      <Stack.Screen name="services" />
     </Stack>
   );
 }

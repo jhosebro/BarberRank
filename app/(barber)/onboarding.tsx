@@ -11,6 +11,8 @@
 
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { WeekSchedule } from "@/types/onboarding.types";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import {
   ActivityIndicator,
   Image,
@@ -173,7 +175,10 @@ function StepPhoto({
       </Text>
 
       <TouchableOpacity onPress={onSkip} style={photo.skipBtn}>
-        <Text style={photo.skipText}>Saltar por ahora →</Text>
+        <Text style={photo.skipText}>
+          Saltar por ahora{" "}
+          <Ionicons name="arrow-forward" size={13} color="#1a0f00" />
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -220,7 +225,9 @@ function StepSchedule({
                   keyboardType="numbers-and-punctuation"
                   maxLength={5}
                 />
-                <Text style={sched.separator}>→</Text>
+                <Text style={sched.separator}>
+                  <Ionicons name="arrow-forward" size={13} color="#fff" />
+                </Text>
                 <TextInput
                   style={sched.timeInput}
                   value={slot.end}
@@ -240,8 +247,9 @@ function StepSchedule({
 
       <View style={sched.hint}>
         <Text style={sched.hintText}>
-          💡 Usa formato 24h. Ej: 09:00 → 18:00. Puedes actualizar tus horarios
-          en cualquier momento desde tu perfil.
+          💡 Usa formato 24h. Ej: 09:00{" "}
+          <Ionicons name="arrow-forward" size={13} color="#886632" /> 18:00.
+          Puedes actualizar tus horarios en cualquier momento desde tu perfil.
         </Text>
       </View>
     </View>
@@ -278,7 +286,9 @@ export default function OnboardingScreen() {
       <View style={styles.header}>
         {step > 1 ? (
           <TouchableOpacity onPress={prevStep} style={styles.backBtn}>
-            <Text style={styles.backText}>←</Text>
+            <Text style={styles.backText}>
+              <Ionicons name="arrow-back" size={22} color="#fff" />
+            </Text>
           </TouchableOpacity>
         ) : (
           <View style={{ width: 36 }} />
@@ -328,9 +338,19 @@ export default function OnboardingScreen() {
             styles.ctaBtn,
             (!canContinue || saving) && styles.ctaBtnDisabled,
           ]}
-          onPress={() => {
-            if (step < 3) nextStep();
-            else finish();
+          onPress={async () => {
+            if (step < 3) {
+              nextStep();
+            } else {
+              try {
+                const ok = await finish();
+                if (ok) {
+                  router.replace("/(barber)/planner");
+                }
+              } catch (error) {
+                console.error(error);
+              }
+            }
           }}
           disabled={!canContinue || saving}
         >
@@ -474,7 +494,7 @@ const sched = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: "#3a3010",
   },
-  hintText: { fontSize: 12, color: "#886633", lineHeight: 18 },
+  hintText: { fontSize: 12, color: "#886632", lineHeight: 18 },
 });
 
 const photo = StyleSheet.create({
@@ -501,6 +521,12 @@ const photo = StyleSheet.create({
     lineHeight: 18,
     marginTop: 8,
   },
-  skipBtn: { marginTop: 20 },
-  skipText: { color: "#666", fontSize: 13 },
+  skipBtn: {
+    marginTop: 20,
+    backgroundColor: "#D4A853",
+    borderRadius: 14,
+    padding: 8,
+    alignItems: "center",
+  },
+  skipText: { color: "#1a0f00", fontSize: 13, fontWeight: "700" },
 });

@@ -1,113 +1,157 @@
-# Welcome to your Expo app 👋
+# 💈 BarberApp
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+![Status](https://img.shields.io/badge/status-in%20development-yellow)
+![Platform](https://img.shields.io/badge/platform-React%20Native-blue)
+![Expo](https://img.shields.io/badge/expo-managed%20workflow-black)
+![Backend](https://img.shields.io/badge/backend-Supabase-green)
+![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-red)
 
-## Get started
+Aplicación móvil para la gestión de citas en barberías, permitiendo a los clientes agendar servicios de forma rápida y a los barberos administrar su disponibilidad y posicionamiento dentro de la plataforma.
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## 📸 Screenshots
 
-2. Start the app
+> ⚠️ Reemplaza estas imágenes con capturas reales de tu app
 
-   ```bash
-   npx expo start
-   ```
+![Home](https://via.placeholder.com/300x600.png?text=Home+Screen)
+![Booking](https://via.placeholder.com/300x600.png?text=Booking+Screen)
+![Profile](https://via.placeholder.com/300x600.png?text=Profile+Screen)
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 📌 Descripción
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+BarberApp es una solución enfocada en optimizar la relación entre barberos y clientes mediante la digitalización del proceso de agendamiento. La aplicación facilita la reserva de citas y permite identificar a los mejores barberos mediante un sistema de ranking.
 
-## Get a fresh project
+---
 
-When you're ready, run:
+## 🎯 Usuarios objetivo
 
-```bash
-npm run reset-project
+- Barberos que desean gestionar su disponibilidad y aumentar su visibilidad.
+- Clientes que buscan agendar citas de manera rápida y eficiente.
+
+---
+
+## 🚀 Funcionalidades principales
+
+- 📅 Gestión de disponibilidad de barberos
+- 📲 Agendamiento de citas por parte de clientes
+- ⭐ Sistema de ranking de barberos
+- 🔐 Autenticación de usuarios
+
+---
+
+## 🧠 Arquitectura del proyecto
+
+El proyecto sigue una arquitectura modular basada en separación de responsabilidades:
+
+```
+src/
+│
+├── components/       # Componentes reutilizables UI
+├── screens/          # Pantallas principales
+├── hooks/            # Lógica reutilizable (custom hooks)
+├── services/         # Comunicación con APIs (Supabase)
+├── context/          # Manejo de estado global (Auth, etc.)
+├── utils/            # Funciones auxiliares
+├── types/            # Tipado con TypeScript
+└── constants/        # Configuraciones y valores estáticos
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 🔍 Principios aplicados
 
-## Learn more
+- Separación de responsabilidades
+- Clean Code
+- Uso de hooks personalizados
+- Tipado estricto con TypeScript
 
-To learn more about developing your project with Expo, look at the following resources:
+---
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 🛠️ Tecnologías utilizadas
 
-## Join the community
+- **Frontend:** React Native + Expo
+- **Backend / BaaS:** Supabase
+- **Base de datos:** PostgreSQL (Supabase)
+- **Autenticación:** Supabase Auth
 
-Join our community of developers creating universal apps.
+---
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## ⚙️ Instalación
 
-npx expo prebuild --clean To build android and ios
-Siempre verificar que se esta compilando el proyecto con java 17 para evitar conflictos
+1. Clonar el repositorio:
 
-- Promtp SRP:
-  Actúa como un arquitecto de software senior especializado en React Native y Clean Architecture.
+```bash
+git clone https://github.com/tu-usuario/barberapp.git
+```
 
-  Voy a darte un archivo de una pantalla (screen). Tu tarea es refactorizarlo aplicando separación de responsabilidades, pero con las siguientes restricciones estrictas:
+2. Instalar dependencias:
 
-  REGLAS OBLIGATORIAS:
-  1.  NO debes crear nuevas carpetas.
-  2.  NO debes cambiar la estructura del proyecto.
-  3.  NO debes dividir en múltiples archivos (todo debe permanecer en el mismo archivo).
-  4.  NO debes introducir nuevas librerías.
-  5.  SOLO puedes reorganizar la lógica existente y mover responsabilidades al hook si aplica.
-  6.  NO cambies el comportamiento funcional.
+```bash
+npm install
+```
 
-  OBJETIVO:
+3. Ejecutar la aplicación:
 
-  Aplicar separación de responsabilidades según Clean Architecture:
-  - La UI (screen) debe ser completamente declarativa.
-  - Toda la lógica de negocio debe vivir en el hook.
-  - La UI NO debe:
-  - Tener lógica condicional compleja
-  - Validar datos
-  - Transformar datos
-  - Controlar flujo de navegación
-  - Conocer estructuras internas complejas del estado
+```bash
+npx expo start
+```
 
-  LO QUE DEBES HACER:
-  1.  Identificar lógica dentro del componente UI y moverla al hook.
-  2.  Crear dentro del hook (si no existen):
-      - canContinue
-      - handleContinue
-      - funciones como skipPhoto (o equivalentes)
-  3.  Reemplazar en la UI:
-      - condicionales complejos → props del hook
-      - lógica inline → funciones del hook
-  4.  Mantener los componentes visuales (StepInfo, StepPhoto, etc.) sin lógica de negocio.
-  5.  Mejorar levemente tipado si es necesario (sin sobreingeniería).
-  6.  No tocar estilos salvo que afecten responsabilidades.
+---
 
-  FORMATO DE RESPUESTA:
-  1.  Explicación breve (máximo 10 líneas) de los cambios realizados.
-  2.  Código final completo del archivo refactorizado.
-  3.  Comentar dentro del código cada mejora con:
-      // ✅ Mejora: explicación breve
+## ▶️ Uso
 
-  CRITERIO DE CALIDAD:
+Una vez iniciada la aplicación:
 
-  El resultado debe cumplir con:
-  - Principio de Responsabilidad Única (SRP)
-  - Separación clara entre UI y lógica
-  - Código legible y mantenible
-  - Sin sobrearquitectura
+- Escanea el código QR con Expo Go (Android / iOS)
+- O ejecútala en un emulador
 
-  REFERENCIA TEÓRICA:
+---
 
-  Basarse en:
-  - Clean Architecture (Robert C. Martin)
-  - Separación de responsabilidades en React (react.dev)
+## 🧱 Estado del proyecto
 
-  Ahora refactoriza el siguiente código:
+🚧 En desarrollo
+
+Actualmente existe un MVP funcional listo para despliegue en Google Play Store.
+
+---
+
+## 📈 Roadmap
+
+- 💳 Integración de pagos
+- 🔔 Notificaciones push
+- 👤 Perfil avanzado de barberos
+- 📊 Historial de citas
+- ⭐ Sistema de reseñas
+
+---
+
+## 🔐 Seguridad
+
+- Autenticación gestionada mediante Supabase Auth
+- Control de acceso basado en usuarios (barberos / clientes)
+- Validación de datos en frontend y backend
+
+---
+
+## 🤝 Contribución
+
+Actualmente este proyecto no acepta contribuciones externas.
+
+---
+
+## 📄 Licencia
+
+© 2026 Jhoan Rojas. Todos los derechos reservados.
+
+Este software y su código fuente son propiedad exclusiva del autor.
+No está permitido copiar, modificar, distribuir, sublicenciar o utilizar este proyecto sin autorización expresa del propietario.
+
+---
+
+## 📚 Referencias
+
+- https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes
+- https://choosealicense.com/no-permission/
+- https://opensource.guide/starting-a-project/
+- https://www.markdownguide.org/basic-syntax/

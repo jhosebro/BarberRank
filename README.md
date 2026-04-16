@@ -14,9 +14,9 @@ Aplicación móvil para la gestión de citas en barberías, permitiendo a los cl
 
 > ⚠️ Reemplaza estas imágenes con capturas reales de tu app
 
-![Home](https://via.placeholder.com/300x600.png?text=Home+Screen)
-![Booking](https://via.placeholder.com/300x600.png?text=Booking+Screen)
-![Profile](https://via.placeholder.com/300x600.png?text=Profile+Screen)
+![Login](./assets/images/login.jpg)
+![Booking](./assets/images/booking.png)
+![Profile](./assets/images/profile.png)
 
 ---
 

@@ -1,4 +1,4 @@
-# 💈 BarberApp
+# 💈 BarberRank
 
 ![Status](https://img.shields.io/badge/status-in%20development-yellow)
 ![Platform](https://img.shields.io/badge/platform-React%20Native-blue)
@@ -148,10 +148,3 @@ Este software y su código fuente son propiedad exclusiva del autor.
 No está permitido copiar, modificar, distribuir, sublicenciar o utilizar este proyecto sin autorización expresa del propietario.
 
 ---
-
-## 📚 Referencias
-
-- https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes
-- https://choosealicense.com/no-permission/
-- https://opensource.guide/starting-a-project/
-- https://www.markdownguide.org/basic-syntax/

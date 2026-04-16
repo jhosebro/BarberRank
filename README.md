@@ -12,9 +12,11 @@ Aplicación móvil para la gestión de citas en barberías, permitiendo a los cl
 
 ## 📸 Screenshots
 
-![Login](./assets/images/login.jpg)
-![Booking](./assets/images/booking.png)
-![Profile](./assets/images/profile.png)
+<p align="center">
+  <img src="./assets/images/login.jpg" width="250"/>
+  <img src="./assets/images/booking.jpg" width="250"/>
+  <img src="./assets/images/profile.jpg" width="250"/>
+</p>
 
 ---
 

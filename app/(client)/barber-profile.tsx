@@ -8,12 +8,12 @@ import {
   ActivityIndicator,
   Animated,
   Image,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   BarberAvailability,
   BarberReview,
@@ -277,7 +277,9 @@ export default function BarberProfileScreen() {
               onPress={() => router.back()}
               style={styles.navBack}
             >
-              <Text style={styles.navBackText}>←</Text>
+              <Text style={styles.navBackText}>
+                <Ionicons name="arrow-back" size={24} color="#fff" />
+              </Text>
             </TouchableOpacity>
             <Text style={styles.stickyNavTitle} numberOfLines={1}>
               {name}
@@ -487,7 +489,6 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-    paddingTop: 20,
   },
   navBack: {
     width: 36,

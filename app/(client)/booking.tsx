@@ -2,12 +2,12 @@
 // Flujo de reserva en 3 pasos: fecha → hora → resumen + confirmación
 
 import { notifyBookingChange } from "@/lib/notifications";
+import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../hooks/useAuth";
 import { useBarberProfile } from "../../hooks/useBarberProfile";
 import { TimeSlot, useBookingSlots } from "../../hooks/useBookingSlots";
@@ -657,7 +658,9 @@ export default function BookingScreen() {
       {/* ── Navbar ── */}
       <View style={styles.navbar}>
         <TouchableOpacity onPress={goBack} style={styles.navBackBtn}>
-          <Text style={styles.navBackText}>←</Text>
+          <Text style={styles.navBackText}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </Text>
         </TouchableOpacity>
         <Text style={styles.navTitle}>Reservar cita</Text>
         <View style={{ width: 36 }} />

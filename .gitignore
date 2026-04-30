@@ -46,3 +46,4 @@ app-example
 .idea/
 supabase/.temp/
 /_credentials/
+google-services.json

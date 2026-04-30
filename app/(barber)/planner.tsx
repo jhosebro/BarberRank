@@ -487,7 +487,10 @@ function BookingRow({
   booking: BarberBooking;
   onPress: () => void;
 }) {
-  const name = booking.client?.full_name ?? "Cliente";
+  const name =
+    booking.entry_type === "external_booking"
+      ? (booking.external_client_name ?? "Cliente")
+      : (booking.client?.full_name ?? "Cliente");
   const initials = name
     .split(" ")
     .slice(0, 2)
@@ -799,6 +802,17 @@ export default function PlannerScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() =>
+          router.push({
+            pathname: "/(barber)/create-entry",
+            params: { date: selectedDate.toISOString() },
+          })
+        }
+      >
+        <Text style={styles.fabText}>+</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -865,5 +879,27 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "flex-end",
     alignItems: "center",
+  },
+  fab: {
+    position: "absolute",
+    bottom: 28,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#D4A853",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#D4A853",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  fabText: {
+    fontSize: 28,
+    color: "#1a0f00",
+    fontWeight: "300",
+    lineHeight: 32,
   },
 });

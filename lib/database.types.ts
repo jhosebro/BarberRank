@@ -102,9 +102,13 @@ export type Database = {
       bookings: {
         Row: {
           barber_id: string | null
+          block_reason: string | null
           client_id: string | null
           created_at: string
           ends_at: string
+          entry_type: string
+          external_client_name: string | null
+          external_client_phone: string | null
           id: string
           notes: string | null
           payment_ref: string | null
@@ -117,9 +121,13 @@ export type Database = {
         }
         Insert: {
           barber_id?: string | null
+          block_reason?: string | null
           client_id?: string | null
           created_at?: string
           ends_at: string
+          entry_type?: string
+          external_client_name?: string | null
+          external_client_phone?: string | null
           id?: string
           notes?: string | null
           payment_ref?: string | null
@@ -132,9 +140,13 @@ export type Database = {
         }
         Update: {
           barber_id?: string | null
+          block_reason?: string | null
           client_id?: string | null
           created_at?: string
           ends_at?: string
+          entry_type?: string
+          external_client_name?: string | null
+          external_client_phone?: string | null
           id?: string
           notes?: string | null
           payment_ref?: string | null

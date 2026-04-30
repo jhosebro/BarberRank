@@ -18,7 +18,14 @@ export interface BarberBooking {
   status: BookingStatus;
   total_price: number;
   notes: string | null;
+
+  entry_type: string;
+
+  external_client_name: string | null;
+  external_client_phone: string | null;
+
   service: { name: string; duration_min: number } | null;
+
   client: {
     full_name: string;
     phone: string | null;
@@ -65,16 +72,49 @@ export function useBarberBookings(date: Date) {
       const { data, error } = await supabase
         .from("bookings")
         .select(
-          `id, scheduled_at, ends_at, status, total_price, notes,
-         service:services(name, duration_min),
-         client:profiles(full_name, phone, avatar_url)`,
+          `
+    id, scheduled_at, ends_at, status, total_price, notes,
+    entry_type, external_client_name, external_client_phone, block_reason,
+    service:services(name, duration_min),
+    client:profiles(full_name, phone, avatar_url)
+  `,
         )
         .eq("barber_id", forBarberId)
         .gte("scheduled_at", dayStart.toISOString())
         .lte("scheduled_at", dayEnd.toISOString())
         .order("scheduled_at", { ascending: true });
 
-      if (!error) setBookings((data as unknown as BarberBooking[]) ?? []);
+      if (!error) {
+        const mapped = (data ?? []).map((b: any): BarberBooking => {
+          let displayName = "Cliente";
+          let phone = null;
+
+          if (b.entry_type === "barber_booking") {
+            displayName = b.client?.full_name ?? "Cliente";
+            phone = b.client?.phone ?? null;
+          }
+
+          if (b.entry_type === "external_booking") {
+            displayName = b.external_client_name ?? "Cliente externo";
+            phone = b.external_client_phone ?? null;
+          }
+
+          if (b.entry_type === "block") {
+            displayName = b.block_reason ?? "Bloqueo";
+          }
+
+          return {
+            ...b,
+            client: {
+              full_name: displayName,
+              phone,
+              avatar_url: b.client?.avatar_url ?? null,
+            },
+          };
+        });
+
+        setBookings(mapped);
+      }
       setLoading(false);
     },
     [],
@@ -147,7 +187,7 @@ export function useBarberBookings(date: Date) {
 
     if (!error) {
       if (status === "confirmed")
-        await notifyBookingChange(bookingId, "bookinrg_confirmed");
+        await notifyBookingChange(bookingId, "booking_confirmed");
       if (status === "cancelled")
         await notifyBookingChange(bookingId, "booking_cancelled");
       if (status === "completed")

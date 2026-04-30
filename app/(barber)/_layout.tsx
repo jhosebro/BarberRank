@@ -6,6 +6,7 @@ export default function BarberLayout() {
       <Stack.Screen name="planner" />
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="services" />
+      <Stack.Screen name="create-entry" options={{ presentation: "modal" }} />
     </Stack>
   );
 }

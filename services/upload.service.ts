@@ -17,24 +17,17 @@ export const uploadService = {
       }
 
       const response = await fetch(uri);
-      const blob = await response.blob();
+      const arrayBuffer = await response.arrayBuffer();
 
-      if (!ALLOWED_TYPES.includes(blob.type)) {
-        throw new Error("Formato no permitido. Usa JPG o PNG");
-      }
+      const fileExt = uri.split(".").pop() || "jpg";
+      const contentType = fileExt === "png" ? "image/png" : "image/jpeg";
 
-      const sizeInMB = blob.size / (1024 * 1024);
-      if (sizeInMB > MAX_FILE_SIZE_MB) {
-        throw new Error("La imagen supera el tamaño máximo de 5MB");
-      }
-
-      const fileExt = blob.type.split("/")[1] || "jpg";
       const fileName = `${userId}/${Date.now()}.${fileExt}`;
 
       const { error } = await supabase.storage
         .from("avatars")
-        .upload(fileName, blob, {
-          contentType: blob.type,
+        .upload(fileName, arrayBuffer, {
+          contentType,
           upsert: true,
         });
 
@@ -49,14 +42,12 @@ export const uploadService = {
       }
 
       return data.publicUrl;
-    } catch (error: unknown) {
+    } catch (error) {
       console.error("UploadService Error:", error);
 
-      if (error instanceof Error) {
-        throw error;
-      }
-
-      throw new Error("Error desconocido al subir la imagen");
+      throw error instanceof Error
+        ? error
+        : new Error("Error desconocido al subir la imagen");
     }
   },
 };

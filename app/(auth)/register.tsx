@@ -6,12 +6,14 @@
 //TODO: Mejorar UX
 //TODO: Mejorar Arquitectura
 
+import { useToast } from "@/context/ToastContext";
 import { UserRole } from "@/lib/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -25,6 +27,7 @@ import { useAuth } from "../../hooks/useAuth";
 
 export default function RegisterScreen() {
   const { signUp, loading } = useAuth();
+  const { showToast } = useToast();
 
   interface RegisterForm {
     fullName: string;
@@ -53,7 +56,31 @@ export default function RegisterScreen() {
     if (!form.fullName || !form.email || !form.password || !form.phone) {
       return;
     }
-    await signUp(form);
+    const res = await signUp(form);
+
+    if (!res.success) {
+      if (res.error?.includes("rate limit")) {
+        showToast({
+          type: "error",
+          message:
+            "Demasiados intentos. Intenta en unos minutos, o revisa tu correo por el enlace de confirmación.",
+        });
+        return;
+      }
+
+      showToast({
+        type: "error",
+        message: res.error,
+      });
+    }
+
+    Alert.alert(
+      "Revisa tu correo",
+      "Te enviamos un enlace para confirmar tu cuenta antes de iniciar sesión.",
+    );
+
+    // navegación manual
+    router.replace("/");
   };
 
   return (

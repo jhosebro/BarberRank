@@ -137,6 +137,8 @@ export function useAuth() {
       return { success: true, user: data.user };
     } catch (error: any) {
       return { success: false, error: error.message };
+    } finally {
+      setState((s) => ({ ...s, loading: false }));
     }
   };
 

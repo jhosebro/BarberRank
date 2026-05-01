@@ -1,3 +1,4 @@
+import { ToastProvider } from "@/context/ToastContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { Stack, router, useSegments } from "expo-router";
 import { useEffect } from "react";
@@ -27,11 +28,13 @@ export default function RootLayout() {
   }, [session, loading, profile, segments]);
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(auth)" />
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="(client)" />
-      <Stack.Screen name="(barber)" />
-    </Stack>
+    <ToastProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(client)" />
+        <Stack.Screen name="(barber)" />
+      </Stack>
+    </ToastProvider>
   );
 }

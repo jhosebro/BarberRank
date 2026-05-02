@@ -2,6 +2,8 @@ import { supabase } from "../lib/supabase";
 
 export interface BarberUpdatePayload {
   city: string;
+  country?: string;
+  state?: string;
   address?: string | null;
   bio?: string | null;
 }
@@ -24,6 +26,8 @@ export const barberService = {
       .from("barbers")
       .update({
         city: data.city,
+        country: data.country || null,
+        state: data.state || null,
         address: data.address ?? null,
         bio: data.bio ?? null,
       })
@@ -118,5 +122,22 @@ export const barberService = {
     }
 
     return data;
+  },
+
+  // 6. Obtener ciudades con barberos activos
+  async getCities(): Promise<string[]> {
+    const { data, error } = await supabase
+      .from("barbers")
+      .select("city")
+      .not("city", "is", null)
+      .not("city", "eq", "");
+
+    if (error) {
+      console.error("Error getCities:", error);
+      return [];
+    }
+
+    const uniqueCities = [...new Set(data.map((b) => b.city).filter(Boolean))];
+    return uniqueCities.sort() as string[];
   },
 };

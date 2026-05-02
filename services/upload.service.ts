@@ -2,9 +2,6 @@
 
 import { supabase } from "../lib/supabase";
 
-const MAX_FILE_SIZE_MB = 5;
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg"];
-
 export const uploadService = {
   async uploadAvatar(userId: string, uri: string): Promise<string> {
     try {

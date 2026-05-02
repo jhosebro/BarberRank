@@ -1,10 +1,11 @@
 import { DEFAULT_SCHEDULE } from "@/constants/schedule";
 import { barberService } from "@/services/barber.service";
+import { locationService, Country, StateWithCities } from "@/services/location.service";
 import { uploadService } from "@/services/upload.service";
 import { WeekSchedule } from "@/types/onboarding.types";
 import { mapScheduleToSlots } from "@/utils/schedule.mapper";
 import * as ImagePicker from "expo-image-picker";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useAuth } from "./useAuth";
 
 export function useOnboarding() {
@@ -14,13 +15,98 @@ export function useOnboarding() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const [city, setCity] = useState("");
-  const [address, setAddress] = useState("");
-  const [bio, setBio] = useState("");
+  const [city, setCity] = useState<string>("");
+  const [address, setAddress] = useState<string>("");
+  const [bio, setBio] = useState<string>("");
 
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
 
   const [schedule, setSchedule] = useState<WeekSchedule>(DEFAULT_SCHEDULE);
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState<string>("CO");
+  const [states, setStates] = useState<StateWithCities[]>([]);
+  const [selectedState, setSelectedState] = useState<string>("");
+  const [cities, setCities] = useState<string[]>([]);
+
+  const loadLocations = useCallback(async () => {
+    try {
+      const list = await locationService.getCountries();
+      setCountries(list);
+    } catch (error) {
+      console.error("Error loading countries:", error);
+    }
+  }, []);
+
+  const loadStates = useCallback(async (countryCode: string) => {
+    try {
+      const data = await locationService.getLocations(countryCode);
+      if (data) {
+        const statesList = locationService.getStatesList(data);
+        setStates(statesList);
+      }
+    } catch (error) {
+      console.error("Error loading states:", error);
+    }
+  }, []);
+
+  const loadCities = useCallback(async (countryCode: string, stateCode: string) => {
+    try {
+      const data = await locationService.getLocations(countryCode);
+      if (data) {
+        const state = data.states[stateCode];
+        if (state) {
+          const citiesList = Object.values(state[2]).sort() as string[];
+          setCities(citiesList);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading cities:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadLocations();
+  }, [loadLocations]);
+
+  const loadExistingBarber = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const barberData: any = await barberService.getBarberProfile(user.id);
+      if (barberData) {
+        if (barberData.city) setCity(barberData.city);
+        if (barberData.address) setAddress(barberData.address);
+        if (barberData.bio) setBio(barberData.bio);
+        
+        if (barberData.country && barberData.state) {
+          await loadStates(barberData.country);
+          setSelectedCountry(barberData.country);
+          setSelectedState(barberData.state);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading existing barber:", error);
+    }
+  }, [user?.id, loadStates]);
+
+  useEffect(() => {
+    if (user?.id) {
+      loadExistingBarber();
+    }
+  }, [user?.id, loadExistingBarber]);
+
+  useEffect(() => {
+    if (selectedCountry) {
+      loadStates(selectedCountry);
+      setSelectedState("");
+      setCities([]);
+    }
+  }, [selectedCountry, loadStates]);
+
+  useEffect(() => {
+    if (selectedCountry && selectedState) {
+      loadCities(selectedCountry, selectedState);
+    }
+  }, [selectedCountry, selectedState, loadCities]);
 
   const toggleDay = useCallback((day: number, enabled: boolean) => {
     setSchedule((s) => ({ ...s, [day]: { ...s[day], enabled } }));
@@ -99,6 +185,10 @@ export function useOnboarding() {
       throw new Error("La ciudad es obligatoria");
     }
 
+    if (!selectedCountry || !selectedState || !city.trim()) {
+      throw new Error("Selecciona país, departamento y ciudad");
+    }
+
     const isValidTime = (start: string, end: string) => start < end;
 
     const hasInvalidSlot = Object.values(schedule).some(
@@ -116,8 +206,13 @@ export function useOnboarding() {
     setSaving(true);
 
     try {
+      const countryName = countries.find((c) => c.code === selectedCountry)?.name || "";
+      const stateName = states.find((s) => s.code === selectedState)?.name || "";
+
       await barberService.updateBarber(user!.id, {
         city,
+        country: countryName,
+        state: stateName,
         address: address || null,
         bio: bio || null,
       });
@@ -146,9 +241,16 @@ export function useOnboarding() {
     bio,
     avatarUri,
     schedule,
+    cities,
+    countries,
+    selectedCountry,
+    setSelectedCountry,
+    states,
+    selectedState,
+    setSelectedState,
+    setCity,
 
     // setters
-    setCity,
     setAddress,
     setBio,
 
@@ -159,5 +261,6 @@ export function useOnboarding() {
     prevStep,
     pickPhoto,
     finish,
+    loadCities,
   };
 }

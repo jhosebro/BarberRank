@@ -16,6 +16,8 @@ import { router } from "expo-router";
 import {
   ActivityIndicator,
   Image,
+  Modal,
+  FlatList,
   ScrollView,
   StyleSheet,
   Switch,
@@ -24,6 +26,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const DAY_NAMES = [
@@ -60,6 +63,157 @@ function Steps({ current }: { current: number }) {
   );
 }
 
+function LocationPicker({
+  countries,
+  selectedCountry,
+  setSelectedCountry,
+  states,
+  selectedState,
+  setSelectedState,
+  city,
+  setCity,
+}: {
+  countries: { code: string; name: string }[];
+  selectedCountry: string;
+  setSelectedCountry: (v: string) => void;
+  states: { code: string; id: number; name: string; citiesList: string[] }[];
+  selectedState: string;
+  setSelectedState: (v: string) => void;
+  city: string;
+  setCity: (v: string) => void;
+}) {
+  const [pickerMode, setPickerMode] = useState<"country" | "state" | "city" | null>(null);
+  const [search, setSearch] = useState("");
+
+  const selectedCountryName = countries.find((c) => c.code === selectedCountry)?.name || "";
+  const selectedStateData = states.find((s) => s.code === selectedState);
+  const citiesList = selectedStateData?.citiesList || [];
+
+  const filteredCountries = search
+    ? countries.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
+    : countries;
+
+  const filteredStates = search
+    ? states.filter((s) => s.name.toLowerCase().includes(search.toLowerCase()))
+    : states;
+
+  const filteredCities = search
+    ? citiesList.filter((c) => c.toLowerCase().includes(search.toLowerCase()))
+    : citiesList;
+
+  const closePicker = () => {
+    setPickerMode(null);
+    setSearch("");
+  };
+
+  const handleSelectCountry = (code: string) => {
+    setSelectedCountry(code);
+    setSelectedState("");
+    setCity("");
+    closePicker();
+  };
+
+  const handleSelectState = (code: string) => {
+    setSelectedState(code);
+    setCity("");
+    closePicker();
+  };
+
+  const handleSelectCity = (cityName: string) => {
+    setCity(cityName);
+    closePicker();
+  };
+
+  const renderItem = ({ item }: { item: any }) => (
+    <TouchableOpacity
+      style={pickerStyles.option}
+      onPress={() => {
+        if (pickerMode === "country") handleSelectCountry(item.code);
+        else if (pickerMode === "state") handleSelectState(item.code);
+        else handleSelectCity(item.name);
+      }}
+    >
+      <Text style={pickerStyles.optionText}>
+        {item.name}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View>
+      <Text style={styles.label}>País *</Text>
+      <TouchableOpacity style={pickerStyles.selector} onPress={() => setPickerMode("country")}>
+        <Text style={[pickerStyles.selectorText, !selectedCountry && pickerStyles.placeholder]}>
+          {selectedCountryName || "Selecciona un país"}
+        </Text>
+        <Ionicons name="chevron-down" size={18} color="#888" />
+      </TouchableOpacity>
+
+      <Text style={styles.label}>Departamento/Estado *</Text>
+      <TouchableOpacity
+        style={[pickerStyles.selector, !selectedCountry && pickerStyles.disabled]}
+        onPress={() => selectedCountry && setPickerMode("state")}
+        disabled={!selectedCountry}
+      >
+        <Text style={[pickerStyles.selectorText, !selectedState && pickerStyles.placeholder]}>
+          {states.find((s) => s.code === selectedState)?.name || (selectedCountry ? "Selecciona un departamento" : "Selecciona un país primero")}
+        </Text>
+        <Ionicons name="chevron-down" size={18} color="#888" />
+      </TouchableOpacity>
+
+      <Text style={styles.label}>Ciudad *</Text>
+      <TouchableOpacity
+        style={[pickerStyles.selector, !selectedState && pickerStyles.disabled]}
+        onPress={() => selectedState && setPickerMode("city")}
+        disabled={!selectedState}
+      >
+        <Text style={[pickerStyles.selectorText, !city && pickerStyles.placeholder]}>
+          {city || (selectedState ? "Selecciona una ciudad" : "Selecciona un departamento primero")}
+        </Text>
+        <Ionicons name="chevron-down" size={18} color="#888" />
+      </TouchableOpacity>
+
+      <Modal visible={pickerMode !== null} transparent animationType="slide">
+        <View style={pickerStyles.modalOverlay}>
+          <View style={pickerStyles.modalContent}>
+            <View style={pickerStyles.modalHeader}>
+              <Text style={pickerStyles.modalTitle}>
+                {pickerMode === "country" ? "Seleccionar País" :
+                 pickerMode === "state" ? "Seleccionar Departamento" :
+                 "Seleccionar Ciudad"}
+              </Text>
+              <TouchableOpacity onPress={closePicker}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              style={pickerStyles.searchInput}
+              placeholder={`Buscar ${pickerMode === "country" ? "país" : pickerMode === "state" ? "departamento" : "ciudad"}...`}
+              placeholderTextColor="#555"
+              value={search}
+              onChangeText={setSearch}
+              autoFocus
+            />
+
+            <FlatList
+              data={
+                pickerMode === "country" ? filteredCountries.map((c, i) => ({ ...c, key: `country-${i}` })) :
+                pickerMode === "state" ? filteredStates.map((s, i) => ({ ...s, key: `state-${i}` })) :
+                filteredCities.map((name, idx) => ({ name, key: `city-${idx}` }))
+              }
+              renderItem={renderItem}
+              keyExtractor={(item: any) => item.key || item.code || String(item.id) || item.name}
+              style={pickerStyles.list}
+              showsVerticalScrollIndicator={false}
+            />
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+}
+
 function StepInfo({
   city,
   setCity,
@@ -67,6 +221,12 @@ function StepInfo({
   setAddress,
   bio,
   setBio,
+  countries,
+  selectedCountry,
+  setSelectedCountry,
+  states,
+  selectedState,
+  setSelectedState,
 }: {
   city: string;
   setCity: (v: string) => void;
@@ -74,6 +234,12 @@ function StepInfo({
   setAddress: (v: string) => void;
   bio: string;
   setBio: (v: string) => void;
+  countries: { code: string; name: string }[];
+  selectedCountry: string;
+  setSelectedCountry: (v: string) => void;
+  states: { code: string; id: number; name: string; citiesList: string[] }[];
+  selectedState: string;
+  setSelectedState: (v: string) => void;
 }) {
   return (
     <View style={styles.stepWrap}>
@@ -82,14 +248,15 @@ function StepInfo({
         Esta info aparecerá en tu perfil público
       </Text>
 
-      <Text style={styles.label}>Ciudad *</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Ej: Cali"
-        placeholderTextColor="#555"
-        value={city}
-        onChangeText={setCity}
-        autoCapitalize="words"
+      <LocationPicker
+        countries={countries}
+        selectedCountry={selectedCountry}
+        setSelectedCountry={setSelectedCountry}
+        states={states}
+        selectedState={selectedState}
+        setSelectedState={setSelectedState}
+        city={city}
+        setCity={setCity}
       />
 
       <Text style={styles.label}>Dirección de tu barbería</Text>
@@ -266,6 +433,12 @@ export default function OnboardingScreen() {
     bio,
     avatarUri,
     schedule,
+    countries,
+    selectedCountry,
+    setSelectedCountry,
+    states,
+    selectedState,
+    setSelectedState,
     setCity,
     setAddress,
     setBio,
@@ -276,10 +449,11 @@ export default function OnboardingScreen() {
     prevStep,
     finish,
   } = useOnboarding();
+
   const canContinue =
-    (step === 1 && city.trim().length > 0) ||
-    step === 2 ||
-    (step === 3 && Object.values(schedule).some((s) => s.enabled));
+    step === 1 
+      ? selectedCountry && selectedState && !!city && city.length > 0
+      : step === 2 || (step === 3 && Object.values(schedule).some((s) => s.enabled));
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -312,6 +486,12 @@ export default function OnboardingScreen() {
             setAddress={setAddress}
             bio={bio}
             setBio={setBio}
+            countries={countries}
+            selectedCountry={selectedCountry}
+            setSelectedCountry={setSelectedCountry}
+            states={states}
+            selectedState={selectedState}
+            setSelectedState={setSelectedState}
           />
         )}
         {step === 2 && (
@@ -529,4 +709,62 @@ const photo = StyleSheet.create({
     alignItems: "center",
   },
   skipText: { color: "#1a0f00", fontSize: 13, fontWeight: "700" },
+});
+
+const pickerStyles = StyleSheet.create({
+  selector: {
+    backgroundColor: "#1e1e1e",
+    borderRadius: 12,
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 0.5,
+    borderColor: "#2a2a2a",
+    marginBottom: 16,
+  },
+  selectorText: { fontSize: 15, color: "#fff", flex: 1 },
+  placeholder: { color: "#555" },
+  disabled: { opacity: 0.5 },
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.8)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "#1e1e1e",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "70%",
+    paddingBottom: 30,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#2a2a2a",
+  },
+  modalTitle: { fontSize: 18, fontWeight: "700", color: "#fff" },
+  searchInput: {
+    backgroundColor: "#0f0f0f",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    color: "#fff",
+    margin: 16,
+    marginBottom: 8,
+    borderWidth: 0.5,
+    borderColor: "#333",
+  },
+  list: { maxHeight: 350 },
+  option: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#2a2a2a",
+  },
+  optionText: { fontSize: 15, color: "#ccc" },
 });

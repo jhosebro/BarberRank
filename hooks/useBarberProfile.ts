@@ -47,6 +47,8 @@ export function useBarberProfile(barberId: string | null) {
   useEffect(() => {
     if (!barberId) return;
 
+    const id = barberId; // Capturamos el ID para evitar problemas de closure
+
     async function fetch() {
       setLoading(true);
       setError(null);
@@ -65,7 +67,7 @@ export function useBarberProfile(barberId: string | null) {
           availability(day_of_week, start_time, end_time)
         `,
         )
-        .eq("id", barberId)
+        .eq("id", id)
         .eq("services.is_active", true)
         .order("created_at", { referencedTable: "reviews", ascending: false })
         .single();

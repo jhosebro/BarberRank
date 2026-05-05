@@ -1,65 +1,124 @@
+// ─── Interfaces ─────────────────────────────────────────────
+
+interface CitiesJson {
+  cities: City[];
+}
+
 export interface Country {
   id: number;
-  code: string;
   name: string;
-  phone_code: string;
-  currency: string;
-  timezone: string;
 }
 
 export interface State {
   id: number;
   name: string;
-  cities: Record<number, string>;
+  id_country: number;
+}
+
+export interface City {
+  id: number;
+  name: string;
+  id_state: number;
 }
 
 export interface StateWithCities {
-  code: string;
   id: number;
   name: string;
   citiesList: string[];
 }
 
-export interface LocationData {
-  country: Country;
-  states: Record<string, [number, string, Record<number, string>]>;
-}
+// ─── Config ─────────────────────────────────────────────
 
-const BASE_URL = "https://cdn.geo-locations.com";
+const citiesData: CitiesJson = require("@/data/cities.json");
+
+const BASE_URL =
+  "https://raw.githubusercontent.com/millan2993/countries/master/json";
+
+// ✔ Nunca usar null → evita errores TS
+let countriesCache: Country[] = [];
+let statesCache: State[] = [];
+let citiesCache: City[] = [];
+
+// ─── Utils ─────────────────────────────────────────────
+
+const parseJSON = (text: string) => {
+  const cleanText = text.replace(/^\uFEFF/, "");
+  return JSON.parse(cleanText);
+};
+
+// ─── Service ─────────────────────────────────────────────
 
 export const locationService = {
+  // ─── Countries ─────────────────────────────────
   async getCountries(): Promise<Country[]> {
-    try {
-      const res = await fetch(`${BASE_URL}/countries.json`);
-      if (!res.ok) throw new Error("Failed to fetch countries");
-      return await res.json();
-    } catch (error) {
-      console.error("Error fetching countries:", error);
+    if (countriesCache.length > 0) return countriesCache;
+
+    const res = await fetch(`${BASE_URL}/countries.json`);
+
+    if (!res.ok) {
+      console.error("Error countries:", res.status);
       return [];
     }
+
+    const text = await res.text();
+    const json = parseJSON(text);
+
+    countriesCache = json.countries ?? [];
+
+    return countriesCache;
   },
 
-  async getLocations(countryCode: string): Promise<LocationData | null> {
-    try {
-      const res = await fetch(`${BASE_URL}/locations/${countryCode}.json`);
-      if (!res.ok) throw new Error(`Failed to fetch locations for ${countryCode}`);
-      return await res.json();
-    } catch (error) {
-      console.error("Error fetching locations:", error);
-      return null;
+  // ─── States ─────────────────────────────────
+  async getStates(countryId: number): Promise<State[]> {
+    if (statesCache.length === 0) {
+      const res = await fetch(`${BASE_URL}/states.json`);
+
+      if (!res.ok) {
+        console.error("Error states:", res.status);
+        return [];
+      }
+
+      const text = await res.text();
+      const json = parseJSON(text);
+
+      statesCache = json.states ?? [];
     }
+
+    return statesCache.filter((s) => s.id_country === countryId);
   },
 
-  getStatesList(data: LocationData): StateWithCities[] {
-    return Object.entries(data.states).map(([code, values]) => ({
-      code,
-      id: values[0],
-      name: values[1],
-      citiesList: Object.values(values[2]).sort() as string[],
-    }));
+  // ─── Cities ─────────────────────────────────
+  async getCities(stateId: number): Promise<string[]> {
+    if (citiesCache.length === 0) {
+      citiesCache = citiesData.cities as City[];
+      console.log(
+        "Cities loaded:",
+        citiesCache.length,
+        "first ids:",
+        citiesCache.slice(0, 5).map((c) => c.id_state),
+      );
+    }
+
+    console.log("Filtering cities for stateId:", stateId);
+    const result = citiesCache
+      .filter((c) => c.id_state === stateId)
+      .map((c) => c.name)
+      .sort();
+
+    console.log("Found cities:", result.length);
+    return result;
   },
 
-  getCitiesList(state: StateWithCities): string[] {
-    return state.citiesList;
+  // ─── Helper avanzado (opcional) ─────────────────────────
+  async getStatesWithCities(countryId: number): Promise<StateWithCities[]> {
+    const states = await this.getStates(countryId);
+
+    return Promise.all(
+      states.map(async (state) => ({
+        id: state.id,
+        name: state.name,
+        citiesList: await this.getCities(state.id),
+      })),
+    );
   },
 };

@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase";
 export interface BarberUpdatePayload {
   city: string;
   country?: string;
-  state?: string;
+  state?: number;
   address?: string | null;
   bio?: string | null;
 }
@@ -40,22 +40,8 @@ export const barberService = {
   },
 
   async getBarberId(profileId: string): Promise<string> {
-    if (!profileId) {
-      throw new Error("profileId es requerido");
-    }
-
-    const { data, error } = await supabase
-      .from("barbers")
-      .select("id")
-      .eq("profile_id", profileId)
-      .single();
-
-    if (error || !data) {
-      console.error("Error getBarberId:", error);
-      throw new Error("No se encontró el barbero");
-    }
-
-    return data.id;
+    const barber = await this.getOrCreateBarberProfile(profileId);
+    return barber.id;
   },
 
   async saveAvailability(barberId: string, slots: AvailabilitySlot[]) {
@@ -105,7 +91,7 @@ export const barberService = {
   },
 
   // 5. Obtener perfil completo (útil para dashboard)
-  async getBarberProfile(profileId: string) {
+  async getOrCreateBarberProfile(profileId: string) {
     if (!profileId) {
       throw new Error("profileId es requerido");
     }
@@ -114,14 +100,31 @@ export const barberService = {
       .from("barbers")
       .select("*")
       .eq("profile_id", profileId)
-      .single();
+      .maybeSingle();
 
-    if (error || !data) {
-      console.error("Error getBarberProfile:", error);
-      throw new Error("No se pudo obtener el perfil del barbero");
+    if (error) {
+      console.error("Error buscando barbero:", error);
+      throw new Error("Error consultando el perfil");
     }
 
-    return data;
+    if (data) return data;
+
+    // 🔥 CREACIÓN AUTOMÁTICA
+    const { data: newBarber, error: insertError } = await supabase
+      .from("barbers")
+      .insert({
+        profile_id: profileId,
+        city: "",
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error("Error creando barbero:", insertError);
+      throw new Error("No se pudo crear el perfil");
+    }
+
+    return newBarber;
   },
 
   // 6. Obtener ciudades con barberos activos

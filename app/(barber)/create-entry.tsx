@@ -312,42 +312,36 @@ function TimeSelector({
 }) {
   if (!slots.length) {
     return (
-      <View style={s.section}>
-        <Text style={s.sectionTitle}>Hora</Text>
-        <Text style={{ color: "#555", fontSize: 13, paddingVertical: 8 }}>
-          Sin disponibilidad este día o selecciona un servicio primero.
-        </Text>
-      </View>
+      <Text style={{ color: "#555", fontSize: 13, paddingVertical: 8 }}>
+        Sin disponibilidad este día o selecciona un servicio primero.
+      </Text>
     );
   }
 
   return (
-    <View style={s.section}>
-      <Text style={s.sectionTitle}>Hora</Text>
-      <View style={tsl.grid}>
-        {slots.map((slot) => (
-          <TouchableOpacity
-            key={slot.time}
+    <View style={tsl.grid}>
+      {slots.map((slot) => (
+        <TouchableOpacity
+          key={slot.time}
+          style={[
+            tsl.slot,
+            !slot.available && tsl.slotBusy,
+            selected === slot.time && tsl.slotSelected,
+          ]}
+          onPress={() => slot.available && onSelect(slot.time)}
+          disabled={!slot.available}
+        >
+          <Text
             style={[
-              tsl.slot,
-              !slot.available && tsl.slotBusy,
-              selected === slot.time && tsl.slotSelected,
+              tsl.slotText,
+              !slot.available && tsl.slotTextBusy,
+              selected === slot.time && tsl.slotTextSelected,
             ]}
-            onPress={() => slot.available && onSelect(slot.time)}
-            disabled={!slot.available}
           >
-            <Text
-              style={[
-                tsl.slotText,
-                !slot.available && tsl.slotTextBusy,
-                selected === slot.time && tsl.slotTextSelected,
-              ]}
-            >
-              {slot.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+            {slot.label}
+          </Text>
+        </TouchableOpacity>
+      ))}
     </View>
   );
 }
@@ -535,14 +529,37 @@ export default function CreateEntryScreen() {
           selected={hook.entryType}
           onSelect={hook.setEntryType}
         />
-
         {/* ── Servicio (no aplica para bloqueo) ── */}
-        {hook.entryType !== "block" && services.length > 0 && (
-          <ServiceSelector
-            services={services.filter((sv) => sv.is_active)}
-            selected={hook.selectedService}
-            onSelect={hook.setSelectedService}
-          />
+        {hook.entryType !== "block" && (
+          <>
+            {services.filter((sv) => sv.is_active).length > 0 ? (
+              <ServiceSelector
+                services={services.filter((sv) => sv.is_active)}
+                selected={hook.selectedService}
+                onSelect={hook.setSelectedService}
+              />
+            ) : (
+              <View style={empty.card}>
+                <Text style={empty.icon}>✂️</Text>
+
+                <Text style={empty.title}>
+                  No tienes servicios configurados
+                </Text>
+
+                <Text style={empty.description}>
+                  Debes crear al menos un servicio para poder registrar citas o
+                  reservas en tu agenda.
+                </Text>
+
+                <TouchableOpacity
+                  style={empty.button}
+                  onPress={hook.goToCreateService}
+                >
+                  <Text style={empty.buttonText}>Crear servicio</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </>
         )}
 
         {/* ── Datos según tipo ── */}
@@ -651,5 +668,51 @@ const s = StyleSheet.create({
     color: "#fff",
     borderWidth: 0.5,
     borderColor: "#2a2a2a",
+  },
+});
+
+const empty = StyleSheet.create({
+  card: {
+    backgroundColor: "#171717",
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#2a2a2a",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+
+  icon: {
+    fontSize: 34,
+    marginBottom: 10,
+  },
+
+  title: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#fff",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+
+  description: {
+    fontSize: 13,
+    color: "#888",
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 18,
+  },
+
+  button: {
+    backgroundColor: "#D4A853",
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+
+  buttonText: {
+    color: "#1a0f00",
+    fontSize: 14,
+    fontWeight: "700",
   },
 });

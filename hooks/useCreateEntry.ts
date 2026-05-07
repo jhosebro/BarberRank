@@ -297,6 +297,10 @@ export function useCreateEntry(
     ]);
   }, [selectedTime, externalName, selectedClient, blockReason]);
 
+  const goToCreateService = () => {
+    router.push("/(barber)/services");
+  };
+
   return {
     // Estado
     entryType,
@@ -326,5 +330,6 @@ export function useCreateEntry(
     generateTimeSlots,
     handleSave,
     handleCancel,
+    goToCreateService,
   };
 }

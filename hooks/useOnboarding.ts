@@ -12,6 +12,11 @@ import * as ImagePicker from "expo-image-picker";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "./useAuth";
 
+type City = {
+  id: number;
+  name: string;
+};
+
 export function useOnboarding() {
   const { user, updateProfile } = useAuth();
 
@@ -19,36 +24,38 @@ export function useOnboarding() {
   // STATE
   // =========================
   const [step, setStep] = useState<1 | 2 | 3>(1);
+
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const [city, setCity] = useState("");
+  const [selectedCountry, setSelectedCountryState] = useState<number | null>(
+    null,
+  );
+
+  const [selectedState, setSelectedStateState] = useState<number | null>(null);
+
+  const [selectedCity, setSelectedCity] = useState<number | null>(null);
+
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [states, setStates] = useState<StateWithCities[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+
   const [address, setAddress] = useState("");
   const [bio, setBio] = useState("");
 
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
+
   const [schedule, setSchedule] = useState<WeekSchedule>(DEFAULT_SCHEDULE);
-
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [states, setStates] = useState<StateWithCities[]>([]);
-  const [cities, setCities] = useState<string[]>([]);
-
-  const [selectedCountry, setSelectedCountry] = useState<number | null>(null);
-  const [selectedState, setSelectedState] = useState<number | null>(null);
-
-  const [isInitializing, setIsInitializing] = useState(true);
 
   // =========================
   // LOADERS
   // =========================
   const loadCountries = useCallback(async () => {
     const list = await locationService.getCountries();
+
     setCountries(list);
 
-    const colombia = list.find((c) => c.name === "Colombia");
-    if (colombia) {
-      setSelectedCountry(colombia.id);
-    }
+    return list;
   }, []);
 
   const loadStates = useCallback(async (countryId: number) => {
@@ -61,46 +68,69 @@ export function useOnboarding() {
     }));
 
     setStates(mapped);
+
+    return mapped;
   }, []);
 
   const loadCities = useCallback(async (stateId: number) => {
     const citiesList = await locationService.getCities(stateId);
-    setCities(citiesList.sort());
+
+    setCities(citiesList);
+
+    return citiesList;
   }, []);
 
   // =========================
-  // INITIAL LOAD (FIX RACE CONDITION)
+  // INITIAL LOAD
   // =========================
   useEffect(() => {
     const init = async () => {
       try {
-        await loadCountries();
+        const countriesList = await loadCountries();
 
-        if (user?.id) {
-          const barberData: any = await barberService.getOrCreateBarberProfile(
-            user.id,
-          );
+        const colombia = countriesList.find((c) => c.name === "Colombia");
 
-          if (barberData) {
-            setCity(barberData.city ?? "");
-            setAddress(barberData.address ?? "");
-            setBio(barberData.bio ?? "");
+        if (colombia) {
+          setSelectedCountryState(colombia.id);
+        }
 
-            if (barberData.country) {
-              setSelectedCountry(barberData.country);
-              await loadStates(barberData.country);
-            }
+        if (!user?.id) return;
 
-            if (barberData.state) {
-              setSelectedState(barberData.state);
-              await loadCities(barberData.state);
-            }
-          }
+        const barberData: any = await barberService.getOrCreateBarberProfile(
+          user.id,
+        );
+
+        if (!barberData) return;
+
+        setAddress(barberData.address ?? "");
+        setBio(barberData.bio ?? "");
+
+        // =========================
+        // COUNTRY
+        // =========================
+        if (barberData.country) {
+          setSelectedCountryState(barberData.country);
+
+          await loadStates(barberData.country);
+        }
+
+        // =========================
+        // STATE
+        // =========================
+        if (barberData.state) {
+          setSelectedStateState(barberData.state);
+
+          await loadCities(barberData.state);
+        }
+
+        // =========================
+        // CITY
+        // =========================
+        if (barberData.city) {
+          setSelectedCity(barberData.city);
         }
       } catch (error) {
-        console.error("Init error:", error);
-      } finally {
-        setIsInitializing(false);
+        console.error("Init onboarding error:", error);
       }
     };
 
@@ -108,43 +138,56 @@ export function useOnboarding() {
   }, [user?.id, loadCountries, loadStates, loadCities]);
 
   // =========================
-  // COUNTRY CHANGE
+  // MANUAL HANDLERS
   // =========================
-  useEffect(() => {
-    if (selectedCountry === null) return;
+  const setSelectedCountry = async (countryId: number | null) => {
+    setSelectedCountryState(countryId);
 
-    loadStates(selectedCountry);
+    setSelectedStateState(null);
+    setSelectedCity(null);
 
-    if (!isInitializing) {
-      setSelectedState(null);
-      setCities([]);
-      setCity("");
+    setStates([]);
+    setCities([]);
+
+    if (countryId !== null) {
+      await loadStates(countryId);
     }
-  }, [selectedCountry, loadStates, isInitializing]);
+  };
 
-  // =========================
-  // STATE CHANGE
-  // =========================
-  useEffect(() => {
-    if (selectedState === null) return;
+  const setSelectedState = async (stateId: number | null) => {
+    setSelectedStateState(stateId);
 
-    loadCities(selectedState);
+    setSelectedCity(null);
 
-    if (!isInitializing) {
-      setCity("");
+    setCities([]);
+
+    if (stateId !== null) {
+      await loadCities(stateId);
     }
-  }, [selectedState, loadCities, isInitializing]);
+  };
 
   // =========================
   // SCHEDULE
   // =========================
   const toggleDay = useCallback((day: number, enabled: boolean) => {
-    setSchedule((s) => ({ ...s, [day]: { ...s[day], enabled } }));
+    setSchedule((prev) => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        enabled,
+      },
+    }));
   }, []);
 
   const changeTime = useCallback(
     (day: number, field: "start" | "end", value: string) => {
-      setSchedule((s) => ({ ...s, [day]: { ...s[day], [field]: value } }));
+      setSchedule((prev) => ({
+        ...prev,
+        [day]: {
+          ...prev[day],
+          [field]: value,
+        },
+      }));
     },
     [],
   );
@@ -152,8 +195,13 @@ export function useOnboarding() {
   // =========================
   // STEPS
   // =========================
-  const nextStep = () => setStep((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3) : s));
-  const prevStep = () => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s));
+  const nextStep = () => {
+    setStep((prev) => (prev < 3 ? ((prev + 1) as 1 | 2 | 3) : prev));
+  };
+
+  const prevStep = () => {
+    setStep((prev) => (prev > 1 ? ((prev - 1) as 1 | 2 | 3) : prev));
+  };
 
   // =========================
   // IMAGE
@@ -161,8 +209,13 @@ export function useOnboarding() {
   const pickPhoto = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (status !== "granted") throw new Error("Permiso denegado");
-    if (!user?.id) throw new Error("Usuario no autenticado");
+    if (status !== "granted") {
+      throw new Error("Permiso denegado");
+    }
+
+    if (!user?.id) {
+      throw new Error("Usuario no autenticado");
+    }
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -181,7 +234,10 @@ export function useOnboarding() {
         result.assets[0].uri,
       );
 
-      await updateProfile({ avatar_url: publicUrl });
+      await updateProfile({
+        avatar_url: publicUrl,
+      });
+
       setAvatarUri(publicUrl);
     } finally {
       setUploading(false);
@@ -192,21 +248,30 @@ export function useOnboarding() {
   // VALIDATION
   // =========================
   const validateForm = () => {
-    if (!user?.id) throw new Error("Usuario no autenticado");
-
-    if (selectedCountry === null || selectedState === null) {
-      throw new Error("Selecciona país y departamento");
+    if (!user?.id) {
+      throw new Error("Usuario no autenticado");
     }
 
-    if (!city.trim()) {
+    if (selectedCountry === null) {
+      throw new Error("Selecciona un país");
+    }
+
+    if (selectedState === null) {
+      throw new Error("Selecciona un departamento");
+    }
+
+    if (selectedCity === null) {
       throw new Error("Selecciona una ciudad");
     }
 
-    const invalid = Object.values(schedule).some(
-      (s) => s.enabled && !(s.start && s.end && s.start < s.end),
+    const invalidSchedule = Object.values(schedule).some(
+      (slot) =>
+        slot.enabled && (!slot.start || !slot.end || slot.start >= slot.end),
     );
 
-    if (invalid) throw new Error("Horarios inválidos");
+    if (invalidSchedule) {
+      throw new Error("Horarios inválidos");
+    }
   };
 
   // =========================
@@ -215,24 +280,23 @@ export function useOnboarding() {
   const finish = async (): Promise<boolean> => {
     validateForm();
 
+    if (!user?.id) {
+      throw new Error("Usuario no autenticado");
+    }
+
     setSaving(true);
 
     try {
-      const countryName = countries.find((c) => c.id === selectedCountry)?.name;
-
-      if (!countryName || selectedState === null) {
-        throw new Error("Datos inválidos");
-      }
-
-      await barberService.updateBarber(user!.id, {
-        city,
-        country: countryName,
-        state: selectedState,
+      await barberService.updateBarber(user.id, {
+        city: selectedCity!,
+        country: selectedCountry!,
+        state: selectedState!,
         address: address || null,
         bio: bio || null,
       });
 
-      const barberId = await barberService.getBarberId(user!.id);
+      const barberId = await barberService.getBarberId(user.id);
+
       const slots = mapScheduleToSlots(schedule, barberId);
 
       await barberService.saveAvailability(barberId, slots);
@@ -247,27 +311,33 @@ export function useOnboarding() {
     step,
     saving,
     uploading,
-    city,
+
+    selectedCountry,
+    selectedState,
+    selectedCity,
+
+    countries,
+    states,
+    cities,
+
     address,
     bio,
     avatarUri,
     schedule,
-    cities,
-    countries,
-    states,
-    selectedCountry,
-    selectedState,
 
     setSelectedCountry,
     setSelectedState,
-    setCity,
+    setSelectedCity,
+
     setAddress,
     setBio,
 
-    toggleDay,
-    changeTime,
     nextStep,
     prevStep,
+
+    toggleDay,
+    changeTime,
+
     pickPhoto,
     finish,
   };

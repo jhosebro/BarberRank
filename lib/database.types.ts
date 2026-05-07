@@ -53,7 +53,8 @@ export type Database = {
         Row: {
           address: string | null
           bio: string | null
-          city: string
+          city: number
+          country: number | null
           created_at: string
           id: string
           is_active: boolean | null
@@ -62,11 +63,13 @@ export type Database = {
           profile_id: string
           rating: number | null
           review_count: number | null
+          state: number | null
         }
         Insert: {
           address?: string | null
           bio?: string | null
-          city: string
+          city: number
+          country?: number | null
           created_at?: string
           id?: string
           is_active?: boolean | null
@@ -75,11 +78,13 @@ export type Database = {
           profile_id: string
           rating?: number | null
           review_count?: number | null
+          state?: number | null
         }
         Update: {
           address?: string | null
           bio?: string | null
-          city?: string
+          city?: number
+          country?: number | null
           created_at?: string
           id?: string
           is_active?: boolean | null
@@ -88,6 +93,7 @@ export type Database = {
           profile_id?: string
           rating?: number | null
           review_count?: number | null
+          state?: number | null
         }
         Relationships: [
           {

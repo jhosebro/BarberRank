@@ -24,7 +24,7 @@ export interface City {
 export interface StateWithCities {
   id: number;
   name: string;
-  citiesList: string[];
+  citiesList: City[];
 }
 
 // ─── Config ─────────────────────────────────────────────
@@ -88,25 +88,14 @@ export const locationService = {
   },
 
   // ─── Cities ─────────────────────────────────
-  async getCities(stateId: number): Promise<string[]> {
+  async getCities(stateId: number): Promise<City[]> {
     if (citiesCache.length === 0) {
       citiesCache = citiesData.cities as City[];
-      console.log(
-        "Cities loaded:",
-        citiesCache.length,
-        "first ids:",
-        citiesCache.slice(0, 5).map((c) => c.id_state),
-      );
     }
 
-    console.log("Filtering cities for stateId:", stateId);
-    const result = citiesCache
+    return citiesCache
       .filter((c) => c.id_state === stateId)
-      .map((c) => c.name)
-      .sort();
-
-    console.log("Found cities:", result.length);
-    return result;
+      .sort((a, b) => a.name.localeCompare(b.name));
   },
 
   // ─── Helper avanzado (opcional) ─────────────────────────

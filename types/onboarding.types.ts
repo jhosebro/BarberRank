@@ -3,4 +3,5 @@ interface DaySchedule {
   start: string;
   end: string;
 }
+
 export type WeekSchedule = Record<number, DaySchedule>;

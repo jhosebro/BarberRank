@@ -10,10 +10,11 @@
 //TODO: Clean Code
 
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { City } from "@/services/location.service";
 import { WeekSchedule } from "@/types/onboarding.types";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -70,21 +71,24 @@ function LocationPicker({
   states,
   selectedState,
   setSelectedState,
-  city,
-  setCity,
+  selectedCity,
+  setSelectedCity,
   cities,
 }: {
   countries: { id: number; name: string }[];
+
   selectedCountry?: number | null;
   setSelectedCountry: (v: number | null) => void;
 
-  states: { id: number; name: string; citiesList: string[] }[];
+  states: { id: number; name: string; citiesList: City[] }[];
+
   selectedState?: number | null;
   setSelectedState: (v: number | null) => void;
 
-  city: string;
-  setCity: (v: string) => void;
-  cities: string[];
+  selectedCity?: number | null;
+  setSelectedCity: (v: number | null) => void;
+
+  cities: { id: number; name: string }[];
 }) {
   const [pickerMode, setPickerMode] = useState<
     "country" | "state" | "city" | null
@@ -96,7 +100,7 @@ function LocationPicker({
 
   const selectedStateData = states.find((s) => s.id === selectedState);
 
-  const citiesList = selectedState && selectedStateData ? cities : [];
+  const citiesList = selectedState ? cities : [];
 
   const filteredCountries = search
     ? countries.filter((c) =>
@@ -109,7 +113,9 @@ function LocationPicker({
     : states;
 
   const filteredCities = search
-    ? citiesList.filter((c) => c.toLowerCase().includes(search.toLowerCase()))
+    ? citiesList.filter((c) =>
+        c.name.toLowerCase().includes(search.toLowerCase()),
+      )
     : citiesList;
 
   const closePicker = () => {
@@ -120,18 +126,19 @@ function LocationPicker({
   const handleSelectCountry = (id: number) => {
     setSelectedCountry(id);
     setSelectedState(null);
-    setCity("");
+    setSelectedCity(null);
     closePicker();
   };
 
   const handleSelectState = (stateId: number) => {
     setSelectedState(stateId);
-    setCity("");
+    setSelectedCity(null);
     closePicker();
   };
 
-  const handleSelectCity = (cityName: string) => {
-    setCity(cityName);
+  const handleSelectCity = (cityId: number) => {
+    console.log("CITY SELECTED =>", cityId);
+    setSelectedCity(cityId);
     closePicker();
   };
 
@@ -139,12 +146,20 @@ function LocationPicker({
     <TouchableOpacity
       style={pickerStyles.option}
       onPress={() => {
-        if (pickerMode === "country" && item.id != null) {
-          handleSelectCountry(item.id);
-        } else if (pickerMode === "state" && item.id != null) {
-          handleSelectState(item.id);
-        } else if (item.name) {
-          handleSelectCity(item.name);
+        if (item.id == null) return;
+
+        switch (pickerMode) {
+          case "country":
+            handleSelectCountry(item.id);
+            break;
+
+          case "state":
+            handleSelectState(item.id);
+            break;
+
+          case "city":
+            handleSelectCity(item.id);
+            break;
         }
       }}
     >
@@ -152,6 +167,17 @@ function LocationPicker({
     </TouchableOpacity>
   );
 
+  console.log("selectedCountry =>", selectedCountry);
+  console.log("selectedState =>", selectedState);
+  console.log("countries =>", countries.length);
+  console.log("states =>", states.length);
+  console.log("city =>", selectedCity);
+
+  const selectedCityData = useMemo(
+    () => cities.find((c) => c.id === selectedCity),
+    [cities, selectedCity],
+  );
+  console.log("selectedCityData =>", selectedCityData);
   return (
     <View>
       <Text style={styles.label}>País *</Text>
@@ -166,61 +192,119 @@ function LocationPicker({
 
       <Text style={styles.label}>Departamento *</Text>
       <TouchableOpacity
+        disabled={!selectedCountry}
+        activeOpacity={selectedCountry ? 0.7 : 1}
         style={[
           pickerStyles.selector,
-          !selectedCountry && pickerStyles.disabled,
+          !selectedCountry && pickerStyles.selectorDisabled,
         ]}
         onPress={() => {
-          if (selectedCountry != null) {
-            setPickerMode("state");
-          }
+          if (!selectedCountry) return;
+          setPickerMode("state");
         }}
       >
-        <Text style={pickerStyles.selectorText}>
-          {selectedStateData?.name || "Selecciona un departamento"}
+        <Text
+          style={[
+            pickerStyles.selectorText,
+            !selectedCountry && pickerStyles.selectorTextDisabled,
+          ]}
+        >
+          {!selectedCountry
+            ? "Primero selecciona un país"
+            : selectedStateData?.name || "Selecciona un departamento"}
         </Text>
+
+        {!selectedCountry && (
+          <Ionicons name="lock-closed" size={16} color="#666" />
+        )}
       </TouchableOpacity>
 
       <Text style={styles.label}>Ciudad *</Text>
       <TouchableOpacity
-        style={[pickerStyles.selector, !selectedState && pickerStyles.disabled]}
-        onPress={() => selectedState && setPickerMode("city")}
+        disabled={!selectedState}
+        activeOpacity={selectedState ? 0.7 : 1}
+        style={[
+          pickerStyles.selector,
+          !selectedState && pickerStyles.selectorDisabled,
+        ]}
+        onPress={() => setPickerMode("city")}
       >
-        <Text style={pickerStyles.selectorText}>
-          {city || "Selecciona una ciudad"}
+        <Text
+          style={[
+            pickerStyles.selectorText,
+            !selectedState && pickerStyles.selectorTextDisabled,
+          ]}
+        >
+          {!selectedState
+            ? "Primero selecciona un departamento"
+            : selectedCityData?.name || "Selecciona una ciudad"}
         </Text>
+
+        {!selectedState && (
+          <Ionicons name="lock-closed" size={16} color="#666" />
+        )}
       </TouchableOpacity>
 
-      <Modal visible={pickerMode !== null} transparent animationType="slide">
-        <View style={pickerStyles.modalOverlay}>
-          <View style={pickerStyles.modalContent}>
+      <Modal
+        visible={pickerMode !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={closePicker}
+      >
+        <TouchableOpacity
+          style={pickerStyles.modalOverlay}
+          activeOpacity={1}
+          onPress={closePicker}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={pickerStyles.modalContent}
+            onPress={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <View style={pickerStyles.modalHeader}>
+              <Text style={pickerStyles.modalTitle}>
+                {pickerMode === "country"
+                  ? "Selecciona un país"
+                  : pickerMode === "state"
+                    ? "Selecciona un departamento"
+                    : "Selecciona una ciudad"}
+              </Text>
+
+              <TouchableOpacity onPress={closePicker}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Search */}
             <TextInput
               style={pickerStyles.searchInput}
               placeholder="Buscar..."
+              placeholderTextColor="#666"
               value={search}
               onChangeText={setSearch}
             />
 
+            {/* List */}
             <FlatList
               data={
                 pickerMode === "country"
                   ? filteredCountries
                   : pickerMode === "state"
                     ? filteredStates
-                    : filteredCities.map((name) => ({ name }))
+                    : filteredCities
               }
               renderItem={renderItem}
               keyExtractor={(item: any) => item.id?.toString() || item.name}
+              keyboardShouldPersistTaps="handled"
             />
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </View>
   );
 }
 function StepInfo({
-  city,
-  setCity,
   address,
   setAddress,
   bio,
@@ -232,9 +316,11 @@ function StepInfo({
   selectedState,
   setSelectedState,
   cities,
+  selectedCity,
+  setSelectedCity,
 }: {
-  city: string;
-  setCity: (v: string) => void;
+  selectedCity?: number | null;
+  setSelectedCity: (v: number | null) => void;
   address: string;
   setAddress: (v: string) => void;
   bio: string;
@@ -244,10 +330,10 @@ function StepInfo({
   selectedCountry?: number | null;
   setSelectedCountry: (v: number | null) => void;
 
-  states: { id: number; name: string; citiesList: string[] }[];
+  states: { id: number; name: string; citiesList: City[] }[];
   selectedState?: number | null;
   setSelectedState: (v: number | null) => void;
-  cities: string[];
+  cities: { id: number; name: string }[];
 }) {
   return (
     <View style={styles.stepWrap}>
@@ -260,8 +346,8 @@ function StepInfo({
         states={states}
         selectedState={selectedState}
         setSelectedState={setSelectedState}
-        city={city}
-        setCity={setCity}
+        selectedCity={selectedCity}
+        setSelectedCity={setSelectedCity}
         cities={cities}
       />
 
@@ -427,7 +513,7 @@ export default function OnboardingScreen() {
     step,
     saving,
     uploading,
-    city,
+    selectedCity,
     address,
     bio,
     avatarUri,
@@ -439,7 +525,7 @@ export default function OnboardingScreen() {
     states,
     selectedState,
     setSelectedState,
-    setCity,
+    setSelectedCity,
     setAddress,
     setBio,
     pickPhoto,
@@ -452,7 +538,7 @@ export default function OnboardingScreen() {
 
   const canContinue =
     step === 1
-      ? !!selectedCountry && !!selectedState && city.trim().length > 0
+      ? !!selectedCountry && !!selectedState && selectedCity !== null
       : step === 2 ||
         (step === 3 && Object.values(schedule).some((s) => s.enabled));
 
@@ -481,8 +567,8 @@ export default function OnboardingScreen() {
       >
         {step === 1 && (
           <StepInfo
-            city={city}
-            setCity={setCity}
+            selectedCity={selectedCity}
+            setSelectedCity={setSelectedCity}
             address={address}
             setAddress={setAddress}
             bio={bio}
@@ -769,4 +855,12 @@ const pickerStyles = StyleSheet.create({
     borderBottomColor: "#2a2a2a",
   },
   optionText: { fontSize: 15, color: "#ccc" },
+  selectorDisabled: {
+    backgroundColor: "#151515",
+    borderColor: "#1a1a1a",
+  },
+
+  selectorTextDisabled: {
+    color: "#555",
+  },
 });

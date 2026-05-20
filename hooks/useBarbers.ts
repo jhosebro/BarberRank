@@ -2,10 +2,10 @@
 // Hook para cargar y filtrar barberos desde Supabase
 
 import { useCallback, useEffect, useState } from "react";
-import { Barber } from "../lib/database.types";
+import { Tables } from "../lib/database.types";
 import { supabase } from "../lib/supabase";
 
-interface BarberWithServices extends Barber {
+interface BarberWithServices extends Tables<"barbers"> {
   services: { name: string; price: number }[];
   profile: { full_name: string; avatar_url: string | null };
 }

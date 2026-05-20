@@ -17,6 +17,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import rawCitiesData from "../../data/cities.json";
 import { useAuth } from "../../hooks/useAuth";
 import { useBarbers } from "../../hooks/useBarbers";
 
@@ -28,14 +29,35 @@ interface Service {
 
 interface BarberItem {
   id: string;
-  city: string;
-  rating: number;
-  review_count: number;
+  city: string | number;
+  rating: number | null;
+  review_count: number | null;
   lat: number | null;
   lng: number | null;
   profile: { full_name: string; avatar_url: string | null };
   services: Service[];
 }
+
+interface City {
+  id: number;
+  name: string;
+}
+
+interface CitiesData {
+  cities: City[];
+}
+
+const citiesData = rawCitiesData as CitiesData;
+
+const getCityName = (cityId: string | number): string => {
+  const id = Number(cityId);
+
+  const city = citiesData.cities.find(
+    (c) => Number(c.id) === id
+  );
+
+  return city?.name ?? "Ciudad desconocida";
+};
 
 // ─── Constantes ───────────────────────────────────────────
 const CITIES = [
@@ -113,7 +135,7 @@ function BarberCard({
           {name}
         </Text>
         <Text style={styles.cardCity} numberOfLines={1}>
-          📍 {item.city}
+          📍 {getCityName(item.city)}
         </Text>
 
         {/* Servicios */}
